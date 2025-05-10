@@ -1,0 +1,31 @@
+Accuracy: 0.5727
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.57      0.63      0.60       542
+         low       0.57      0.59      0.58       528
+      normal       0.58      0.51      0.54       559
+
+    accuracy                           0.57      1629
+   macro avg       0.57      0.57      0.57      1629
+weighted avg       0.57      0.57      0.57      1629
+
+
+Confusion Matrix:
+               Predicted high  Predicted low  Predicted normal
+Actual high               340            107                95
+Actual low                108            310               110
+Actual normal             150            126               283
+
+Sample Predictions:
+True: low, Predicted: low
+True: normal, Predicted: normal
+True: normal, Predicted: low
+True: normal, Predicted: high
+True: high, Predicted: high
+True: low, Predicted: normal
+True: normal, Predicted: normal
+True: high, Predicted: normal
+True: normal, Predicted: normal
+True: low, Predicted: low

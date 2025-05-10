@@ -1,159 +1,60 @@
 import pandas as pd
-import numpy as np
-import glob
-import os
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import RidgeClassifierCV
-from sktime.transformations.panel.rocket import MiniRocket
+from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+from sklearn.pipeline import Pipeline
 import joblib
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import pandas as pd
 
+# Set up caching directory
+memory = joblib.Memory(location="svm_cache", verbose=0)
 
-# Constants
-WINDOW_SIZE = 300  # samples, 3s
-STEP_SIZE = 150  # samples, 1.5s
+# === Step 1: Load the feature data ===
+df = pd.read_csv("data/features/gaze_features.csv")
+df = df.dropna()
+# === Step 2: Prepare labels and features ===
+# Target labels
+y = df["Label"].astype(str)
 
-# Load mapping
-mapping_df = pd.read_csv("data/mapping/conditions.csv")
-mapping_df.columns = mapping_df.columns.str.strip()
-
-# Ensure EngagementLevel is standardized
-mapping_df["EngagementLevel"] = (
-    mapping_df["eng_level"]
-    .str.lower()
-    .map(
-        {
-            "low": "low",
-            "normal": "normal",
-            "high": "high",
-        }
-    )
+# Drop metadata columns that aren't features
+X = df.drop(
+    columns=["Label", "SubjectID", "RunID", "WindowStart", "WindowEnd", "WindowIndex"]
 )
 
-train_data_path = "data/raw/eyetracking/sampled/train"
-test_data_path = "data/raw/eyetracking/sampled/test"
-
-
-def load_and_prepare_data(window_size=WINDOW_SIZE, step_size=STEP_SIZE):
-    X, y = [], []
-    file_paths = glob.glob(f"{train_data_path}/*.csv")
-
-    for file in file_paths:
-        df = pd.read_csv(file)
-        df.columns = df.columns.str.strip()
-        filename = os.path.basename(file)
-        subject_id = int(filename.split("_")[1].split("-")[1])  # '1'
-        run_id = int(filename.split("_")[2].replace(".csv", "").split("-")[1])  # '1'
-
-        # Extract 12 gaze channels
-        features = (
-            df[
-                [
-                    "Left Screen X",
-                    "Left Screen Y",
-                    "Right Screen X",
-                    "Right Screen Y",
-                    "Left Pupil Diameter",
-                    "Right Pupil Diameter",
-                    "Left Blink",
-                    "Right Blink",
-                    "Left Fixation",
-                    "Right Fixaion",
-                    "Left Eye Saccade",
-                    "Right Eye Saccade",
-                ]
-            ]
-            .to_numpy()
-            .T
-        )  # shape: (12, n_timepoints)
-
-        # Get engagement label from mapping CSV
-        label_row = mapping_df[
-            (mapping_df["subject_id"] == subject_id) & (mapping_df["run"] == run_id)
-        ]
-        if label_row.empty:
-            print(f"Warning: No mapping for Subject {subject_id}, Run {run_id}")
-            continue
-
-        label = label_row["EngagementLevel"].values[0]
-
-        for i in range(0, features.shape[1] - window_size + 1, step_size):
-            window = features[:, i : i + window_size]
-            X.append(window)
-            y.append(label)
-
-    X = np.stack(X)  # shape (n_samples, 12, window_size)
-    y = np.array(y)
-
-    return X, y
-
-
-# Example pipeline with caching and reproducibility
-pipeline = Pipeline(
-    steps=[
-        ("transform", MiniRocket(random_state=42)),
-        ("classifier", RidgeClassifierCV()),
-    ],
-    memory=joblib.Memory(location="cache_dir", verbose=0),  # Specify a cache directory
-)
-
-# Usage
-X, y = load_and_prepare_data()
-
-# Train/test split (assuming X, y already defined)
+# === Step 3: Train/Test split ===
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
+    X, y, test_size=0.2, random_state=42, stratify=y
 )
 
-# Fit pipeline
+# === Step 4: Build pipeline (scaling + SVM) ===
+# Build pipeline with memory argument
+pipeline = Pipeline(
+    [
+        # ("imputer", SimpleImputer(strategy="mean")),
+        ("scaler", StandardScaler()),
+        ("svm", SVC(kernel="rbf", C=1.0, gamma="scale", random_state=42)),
+    ],
+    memory=memory,
+)
+
+# === Step 5: Train ===
 pipeline.fit(X_train, y_train)
 
-# Predict
+# === Step 6: Predict ===
 y_pred = pipeline.predict(X_test)
 
+# === Step 7: Evaluate ===
+print("Accuracy: {:.4f}".format(accuracy_score(y_test, y_pred)))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
-# Accuracy
-acc = accuracy_score(y_test, y_pred)
-print(f"Accuracy: {acc:.4f}")
-
-# Classification Report
-print("\nClassification Report:")
-print(classification_report(y_test, y_pred))
-
-# Confusion Matrix
+# === Step 8: Confusion Matrix ===
 conf_matrix = confusion_matrix(y_test, y_pred)
-print("\nConfusion Matrix:")
-print(
-    pd.DataFrame(
-        conf_matrix,
-        index=[f"Actual {label}" for label in pipeline.classes_],
-        columns=[f"Predicted {label}" for label in pipeline.classes_],
-    )
+labels = sorted(df["Label"].unique())
+conf_df = pd.DataFrame(
+    conf_matrix,
+    index=[f"True {l}" for l in labels],
+    columns=[f"Pred {l}" for l in labels],
 )
 
-# (Optional) View actual vs predicted values
-print("\nSample Predictions:")
-for true, pred in zip(y_test[:10], y_pred[:10]):
-    print(f"True: {true}, Predicted: {pred}")
-
-# for i in range(3):
-#     window_df = pd.DataFrame(
-#         X[i].T,
-#         columns=[
-#             "Left Screen X",
-#             "Left Screen Y",
-#             "Right Screen X",
-#             "Right Screen Y",
-#             "Left Pupil Diameter",
-#             "Right Pupil Diameter",
-#             "Left Blink",
-#             "Right Blink",
-#             "Left Fixation",
-#             "Right Fixaion",
-#             "Left Eye Saccade",
-#             "Right Eye Saccade",
-#         ],
-#     )
-#     window_df.to_csv(f"window_{i+1}_label_{y[i]}.csv", index=False)
+print("\nConfusion Matrix:\n", conf_df)
