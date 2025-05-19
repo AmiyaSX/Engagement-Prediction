@@ -4,8 +4,9 @@ import glob
 import os
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import RidgeClassifierCV
+from xgboost import XGBClassifier
 from sktime.transformations.panel.rocket import MiniRocket
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import LeaveOneGroupOut, GridSearchCV, train_test_split
 import joblib
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
@@ -13,8 +14,8 @@ import pandas as pd
 
 
 # Constants
-WINDOW_SIZE = 120  # samples, 12s
-STEP_SIZE = 50  # samples, 5s
+WINDOW_SIZE = 1200  # samples, 12s
+STEP_SIZE = 600  # samples, 6s
 
 # Load mapping
 mapping_df = pd.read_csv("data/mapping/conditions.csv")
@@ -33,11 +34,11 @@ mapping_df["EngagementLevel"] = (
 )
 
 train_data_path = "data/raw/eyetracking/sampled/train"
-test_data_path = "data/raw/eyetracking/cleaned/mini_sampled"
+test_data_path = "data/raw/eyetracking/sampled/test"
 
 
 def load_and_prepare_data(window_size=WINDOW_SIZE, step_size=STEP_SIZE):
-    X, y = [], []
+    X, y, groups = [], [], []
     file_paths = glob.glob(f"{test_data_path}/*.csv")
 
     for file in file_paths:
@@ -83,46 +84,62 @@ def load_and_prepare_data(window_size=WINDOW_SIZE, step_size=STEP_SIZE):
             window = features[:, i : i + window_size]
             X.append(window)
             y.append(label)
+            groups.append(subject_id)
 
     X = np.stack(X)  # shape (n_samples, 12, window_size)
     y = np.array(y)
+    groups = np.array(groups)
 
-    return X, y
+    return X, y, groups
 
 
 # Example pipeline with caching and reproducibility
 pipeline = Pipeline(
     steps=[
         ("transform", MiniRocket(random_state=42)),
-        ("classifier", RidgeClassifierCV()),
+        (
+            "classifier",
+            RandomForestClassifier(
+                n_estimators=100,  # Number of trees
+                max_depth=None,  # No max depth (you can set a value if needed)
+                min_samples_leaf=2,  # Minimum number of samples per leaf
+                max_features="sqrt",  # Number of features to consider at each split
+                random_state=42,
+                n_jobs=-1,
+            ),
+        ),
     ],
     memory=joblib.Memory(location="cache_dir", verbose=0),  # Specify a cache directory
 )
 
-# Usage
-X, y = load_and_prepare_data()
+# Load data
+X, y, groups = load_and_prepare_data()
 
-# Train/test split (assuming X, y already defined)
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
 
-# Fit pipeline
+# Split train/test dataset based on subject
+subject_test_id = 1  # sub01
+train_mask = groups != subject_test_id
+test_mask = groups == subject_test_id
+
+X_train, y_train = X[train_mask], y[train_mask]
+X_test, y_test = X[test_mask], y[test_mask]
+# X_train, X_test, y_train, y_test = train_test_split(
+#     X, y, test_size=0.2, random_state=42
+# )
+
 pipeline.fit(X_train, y_train)
 
 # Predict
 y_pred = pipeline.predict(X_test)
 
 
-# Accuracy
+# ------------- Evaluate ------------ #
 acc = accuracy_score(y_test, y_pred)
 print(f"Accuracy: {acc:.4f}")
 
-# Classification Report
 print("\nClassification Report:")
 print(classification_report(y_test, y_pred))
 
-# Confusion Matrix
 conf_matrix = confusion_matrix(y_test, y_pred)
 print("\nConfusion Matrix:")
 print(
@@ -133,7 +150,6 @@ print(
     )
 )
 
-# (Optional) View actual vs predicted values
 print("\nSample Predictions:")
 for true, pred in zip(y_test[:10], y_pred[:10]):
     print(f"True: {true}, Predicted: {pred}")

@@ -2,7 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+svm_cache/
+cache_dir/
+*.DS_Store
 # C extensions
 *.so
 

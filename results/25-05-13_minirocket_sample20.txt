@@ -1,0 +1,33 @@
+Classifier: Random Forest
+
+Accuracy: 0.6875
+
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.71      0.67      0.69       435
+         low       0.70      0.75      0.73       537
+      normal       0.64      0.63      0.64       468
+
+    accuracy                           0.69      1440
+   macro avg       0.69      0.68      0.68      1440
+weighted avg       0.69      0.69      0.69      1440
+
+
+Confusion Matrix:
+               Predicted high  Predicted low  Predicted normal
+Actual high               291             65                79
+Actual low                 48            405                84
+Actual normal              69            105               294
+
+Sample Predictions:
+True: normal, Predicted: high
+True: high, Predicted: high
+True: low, Predicted: normal
+True: high, Predicted: normal
+True: low, Predicted: high
+True: high, Predicted: high
+True: high, Predicted: high
+True: high, Predicted: low
+True: high, Predicted: high
+True: high, Predicted: normal
