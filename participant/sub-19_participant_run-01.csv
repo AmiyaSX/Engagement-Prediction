@@ -1,0 +1,118 @@
+start_time,end_time,transcription
+1.3,1.7,hej
+4.3,5.9,"hej jag heter rufus"
+7.4,7.7,ja
+18.4,18.9,yes
+22.2,22.7,ja
+24.1,25.2,"yes eh"
+25.6,26.9,"det handlar om att"
+27.4,28.3,"om vi bör"
+28.7,29.9,implementera
+30.4,32.5,"maskininlärning med"
+33,33.7,i
+34.3,36.2,"robotdomare så"
+36.4,38.9,"tänkte jag att det skulle vara ett rättsväsende som"
+39.3,41.5,"blir som robotdomarna"
+41.9,42.7,"och eh"
+43.9,46.9,"ja det går ju i sin korthet är det det men"
+47.8,49.5,"då ska man fundera på att"
+50.6,51.7,"fungerar det"
+52.5,53.8,"med ai att"
+54,54.8,"kan man lära den"
+56.5,57.9,"att vara rättvis?"
+64.8,67.1,"i ja precis"
+67.6,69.9,"på att om domar nu"
+70.4,71,kan
+71.5,73.1,"göra beslut som"
+73.5,74.2,som
+74.4,78.1,"påverkas av hudfärg, sexuell läggning, och"
+78.8,79.4,"sådan här"
+86.7,88.5,"det skulle kunna bli eh"
+89.4,92.3,"själv tänkte på det att det finns liksom problem med eh"
+93.1,95.5,"det kan finnas problem med ai att"
+96.6,99.8,"att det baserar sig på data som man ger in till den"
+100.6,101.5,"om man ger den"
+102.5,104.9,"data som i grund och botten"
+105.2,106.1,är
+106.7,107.4,färgat
+107.6,108.4,"på något sätt"
+108.9,110.3,"det då blir fel"
+111.1,112.7,"du tänker på typ att"
+125.5,126.1,ja
+178.7,180.8,"ja där håller jag helt eh"
+181.2,182.8,"med på samma sak att"
+183.6,186.1,"just kommer själv ha varit med"
+186.8,189.7,"ryssland eller något liknande men de har just hållit på med"
+190.3,192.5,"eh självkörande bilar"
+192.8,196.4,"att sedan problemet har varit att den eh enklare"
+196.8,199.6,"kör på en mörkhyad person än en"
+199.8,203.7,"än en vithyad för man har tränad den med just vithyade människor"
+205.3,208.6,"på så vis en exakt liknande sak"
+209,211.5,"att man måste träna den på"
+211.9,212.7,"rätt sätt"
+226.3,227.5,ja
+227.9,228.9,"jag antar att"
+229.1,231.5,"du är lingvist kanske själv?"
+231.8,232.3,eller
+235.5,236.2,ja
+236.5,238.9,"där kan jag tänka mig att ni går väl"
+239.2,242.8,"till viss del genom nuförtiden artificiell interlligens"
+245,245.4,ja
+248.8,250,"just det ja"
+250.9,251.6,mhm
+253.6,255.9,"ja tänkte inte så mycket men"
+256.7,260.5,"jag tycker det är intressant område i sig"
+287.9,288.5,ja
+304.6,305.1,ja
+305.7,309.6,"om jag kommer ihåg så var det microsofts egen"
+310,312.4,"ai som de släppte ut på twitter"
+313,313.8,"och så"
+314.1,314.9,"var det"
+315.3,318.4,"lade de ned det efter 24 timmar för den"
+318.9,320.5,"gick så snabbt in på"
+321.2,322.7,"på vad heter det"
+323.2,327.3,"hat mot judar och rasism och sexism"
+327.6,332.5,"såg just samma sak hur ska man få inputen"
+333,334.1,tillräckligt
+335.3,337.9,"mhm ja neutral"
+371.4,371.9,mhm
+385.4,385.9,ja
+398.4,399,mhm
+410.9,412.5,"ja då tänker jag just"
+413,415.9,"jag skulle tänka mig med ai att problemet är att"
+416.4,420.4,"man antagligen skriver en text till den som den ska man göra beslut på"
+421.1,424.9,"man skulle kunna tänka sig att man inte inkluderar kön köns"
+425.9,426.9,"eller ord om"
+427.1,429.1,"som berätter vilket kön personen är"
+429.3,434.3,"men ändå så då tar den ändå i beaktande bara skriven text men alltså just en"
+434.9,435.7,domare
+436.4,438.7,"om minst domare skulle"
+438.9,440.5,"ta allting i beaktande"
+440.8,444.1,"ja precis som du sade med det där ansiktsuttrycket så det"
+444.9,449,"så det måste bli någon väldigt kapabel ai som"
+449.4,452,"både tar i beaktande hur man talar hur man ser ut"
+452.8,453.7,osv
+455,460,"eh som som både borde då på något sätt kunna tolka ansiktsuttryck"
+460.5,462.2,"eh hur man talar"
+463.6,466.4,"sådär ja det låter som att man måste ha sådär"
+467.4,470,"flera olika sorter säga att det ska bli"
+471.3,472.7,"kanske fungerande"
+481.7,484.4,"ja ja eller för att annars blir det"
+485.4,489.1,"kan man tänka sig att det blir liksom ensidigt"
+489.3,492.3,"att inputten inputen blir ganska ensidig"
+505.2,510.1,"ja det är nog sant man skulle inte behöva lika mycket människor heller kanske"
+510.9,512.1,"fundera kring"
+521.3,522.8,"ja det är svårt"
+523.4,526.9,"men sedan undrar jag också att om du skulle också stå för"
+527.8,529.5,"inför en domstol"
+529.7,530.9,"om man ändå har en"
+531.4,532.5,"en en"
+533,534.8,"vad heter det jurist"
+535.1,537.2,"som talar för en, eller hur?"
+538.9,541.1,"så man kan tänka sig att eller ja att"
+541.4,543.8,"har man sedan någon som hävdar att"
+544,545.3,"och vet liksom bättre"
+545.7,548.2,"hur lagarna fungerar och försöker hitta på något"
+548.4,550.1,"bästa alternativet jag vet inte"
+551.9,552.5,haha
+554.706,555.013,mhm
