@@ -1,0 +1,49 @@
+/opt/homebrew/anaconda3/envs/engagement_prediction/bi
+n/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/scripts/train_minirocket_roi.py"
+
+Saved metadata for 8282 windows to 'window_metadata.csv'
+
+Running Leave-One-Group-Out Cross-Validation:
+
+Fold 1 | Test Group: [5] | Accuracy: 0.3918
+Fold 2 | Test Group: [7] | Accuracy: 0.7585
+Fold 3 | Test Group: [8] | Accuracy: 0.6256
+Fold 4 | Test Group: [11] | Accuracy: 0.2246
+Fold 5 | Test Group: [12] | Accuracy: 0.6522
+Fold 6 | Test Group: [13] | Accuracy: 0.6087
+Fold 7 | Test Group: [15] | Accuracy: 0.7101
+Fold 8 | Test Group: [18] | Accuracy: 0.2174
+Fold 9 | Test Group: [19] | Accuracy: 0.4324
+Fold 10 | Test Group: [20] | Accuracy: 0.8019
+Fold 11 | Test Group: [21] | Accuracy: 0.2826
+Fold 12 | Test Group: [22] | Accuracy: 0.4010
+Fold 13 | Test Group: [23] | Accuracy: 0.7585
+Fold 14 | Test Group: [27] | Accuracy: 0.7005
+Fold 15 | Test Group: [28] | Accuracy: 0.3406
+Fold 16 | Test Group: [29] | Accuracy: 0.8478
+Fold 17 | Test Group: [30] | Accuracy: 0.6667
+Fold 18 | Test Group: [31] | Accuracy: 0.2850
+Fold 19 | Test Group: [32] | Accuracy: 0.1884
+Fold 20 | Test Group: [33] | Accuracy: 0.5314
+
+=== LOGO CV Summary ===
+Mean Accuracy: 0.5213
+Std Accuracy: 0.2119
+
+Classification Report (Aggregated):
+              precision    recall  f1-score   support
+
+        high       0.53      0.53      0.53      2762
+         low       0.54      0.49      0.51      2760
+      normal       0.49      0.55      0.52      2760
+
+    accuracy                           0.52      8282
+   macro avg       0.52      0.52      0.52      8282
+weighted avg       0.52      0.52      0.52      8282
+
+
+Confusion Matrix (Aggregated):
+               Predicted high  Predicted low  Predicted normal
+Actual high              1455            526               781
+Actual low                639           1340               781
+Actual normal             634            604              1522

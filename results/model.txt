@@ -1,0 +1,2 @@
+Best Parameters: {'classifier__learning_rate': 0.1, 'classifier__max_depth': 3, 'classifier__n_estimators': 200, 'classifier__subsample': 1.0}
+Best CV Accuracy: 0.3545

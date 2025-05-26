@@ -1,0 +1,17 @@
+/opt/homebrew/anaconda3/envs/engagement_prediction/bi
+n/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/scripts/train_minirocket_embeddings.py"
+Participant & Operator Data
+Found 58 matched transcript pairs.
+100%|██████████████████████████████████████████████████████████████████████████████| 58/58 [00:12<00:00,  4.49it/s]
+Leave-One-Group-Out CV Results:
+Average Accuracy: 0.5969
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.54      0.60      0.57      2020
+         low       0.73      0.64      0.68      2177
+      normal       0.54      0.55      0.55      2109
+
+    accuracy                           0.60      6306
+   macro avg       0.60      0.60      0.60      6306
+weighted avg       0.60      0.60      0.60      6306

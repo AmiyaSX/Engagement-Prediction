@@ -11,6 +11,8 @@ import joblib
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
+from scipy.stats import skew, kurtosis, entropy
+from scipy.fftpack import fft
 
 # Constants
 WINDOW_SIZE = 10  # samples, 12s
@@ -40,6 +42,106 @@ mapping_df["EngagementLevel"] = (
         }
     )
 )
+
+
+def extract_features_from_window(window):
+    """
+    Enhanced feature extraction from a time-windowed ROI signal.
+    Applies statistical, frequency, and complexity features across ROIs.
+    """
+    features = []
+    num_rois = window.shape[0]
+
+    for roi_signal in window:
+        # Basic statistics
+        mean_val = np.mean(roi_signal)
+        std_val = np.std(roi_signal)
+        min_val = np.min(roi_signal)
+        max_val = np.max(roi_signal)
+        range_val = np.ptp(roi_signal)
+        skew_val = skew(roi_signal)
+        kurt_val = kurtosis(roi_signal)
+
+        # Derivatives
+        first_diff = np.diff(roi_signal)
+        second_diff = np.diff(first_diff)
+        slope, intercept = np.polyfit(range(len(roi_signal)), roi_signal, 1)
+
+        # Signal energy & entropy
+        energy = np.sum(roi_signal**2)
+        hist, _ = np.histogram(roi_signal, bins=10)
+        ent = entropy(hist + 1)  # +1 to avoid log(0)
+
+        # Zero crossing rate
+        zcr = ((roi_signal[:-1] * roi_signal[1:]) < 0).sum()
+
+        # Autocorrelation with lag 1
+        autocorr = np.corrcoef(roi_signal[:-1], roi_signal[1:])[0, 1]
+
+        # FFT features
+        fft_coeffs = np.abs(fft(roi_signal))
+        fft_mean = np.mean(fft_coeffs)
+        fft_std = np.std(fft_coeffs)
+        fft_power = np.sum(fft_coeffs**2)
+        peak_freq = np.argmax(fft_coeffs[1:]) + 1  # Ignore DC component
+
+        # Hjorth parameters
+        var_1 = np.var(first_diff)
+        var_2 = np.var(second_diff)
+        var_0 = np.var(roi_signal)
+        mobility = np.sqrt(var_1 / var_0) if var_0 != 0 else 0
+        complexity = (
+            np.sqrt(var_2 / var_1) / mobility if var_1 != 0 and mobility != 0 else 0
+        )
+
+        # Slope change count
+        slope_changes = np.sum(np.diff(np.sign(first_diff)) != 0)
+
+        # Append all features for this ROI
+        features.extend(
+            [
+                mean_val,
+                std_val,
+                min_val,
+                max_val,
+                range_val,
+                skew_val,
+                kurt_val,
+                np.mean(first_diff),
+                np.mean(second_diff),
+                slope,
+                intercept,
+                energy,
+                ent,
+                zcr,
+                autocorr,
+                fft_mean,
+                fft_std,
+                fft_power,
+                peak_freq / len(fft_coeffs),
+                mobility,
+                complexity,
+                slope_changes,
+            ]
+        )
+
+    # Cross-ROI correlations
+    for i in range(num_rois):
+        for j in range(i + 1, num_rois):
+            corr = np.corrcoef(window[i], window[j])[0, 1]
+            features.append(corr)
+
+    # Lagged cross-ROI correlations
+    for lag in [1, 2, 3]:
+        for i in range(num_rois):
+            for j in range(i + 1, num_rois):
+                try:
+                    lagged_corr = np.corrcoef(window[i][:-lag], window[j][lag:])[0, 1]
+                except:
+                    lagged_corr = 0
+                features.append(lagged_corr)
+
+    return features
 
 
 def load_roi_data(window_size=10, step_size=4):
@@ -81,7 +183,7 @@ def load_roi_data(window_size=10, step_size=4):
                 print(f"Could not parse run_id from value '{run_id_str}' in {filename}")
                 continue
 
-            # Lookup engagement level
+            # Lookup engagement level from mapping
             label_row = mapping_df[
                 (mapping_df["subject_id"] == subject_id) & (mapping_df["run"] == run_id)
             ]
@@ -92,13 +194,7 @@ def load_roi_data(window_size=10, step_size=4):
             label = label_row["EngagementLevel"].values[0]
 
             # Extract ROI features
-            features = (
-                group[
-                    ["comp_vs_prod_combined", "dmn_medial_tpj", "prod_vs_comp_combined"]
-                ]
-                .to_numpy()
-                .T
-            )  # shape: (3, n_samples)
+            features = group[roi_columns].to_numpy().T  # shape: (3, n_samples)
 
             timestamps = group["timestamp"].to_numpy()
 
@@ -106,11 +202,11 @@ def load_roi_data(window_size=10, step_size=4):
                 start_time = timestamps[i]
                 end_time = timestamps[i + window_size - 1]
                 window = features[:, i : i + window_size]
-                X.append(window)
+                feature_set = extract_features_from_window(window)
+                X.append(feature_set)
                 y.append(label)
                 groups.append(subject_id)
 
-                # Record metadata
                 metadata.append(
                     {
                         "subject_id": subject_id,
@@ -124,7 +220,7 @@ def load_roi_data(window_size=10, step_size=4):
     if not X:
         raise ValueError("No valid data was loaded. Check input files and mappings.")
 
-    X = np.stack(X)  # shape: (n_samples, 3, window_size)
+    X = np.stack(X)  # shape: (n_samples, features)
     y = np.array(y)
     groups = np.array(groups)
     metadata_df = pd.DataFrame(metadata)
@@ -137,23 +233,10 @@ from sklearn.preprocessing import LabelEncoder
 
 le = LabelEncoder()
 # Encode string labels to integers
-y_encoded = le.fit_transform(y)  # Now y_encoded contains 0, 1, 2
+y_encoded = le.fit_transform(y)
 
 pipeline = Pipeline(
     steps=[
-        ("transform", MiniRocket(random_state=42)),
-        # (
-        #     "classifier",
-        #     RandomForestClassifier(
-        #         n_estimators=100,  # Number of trees
-        #         class_weight="balanced",
-        #         max_depth=3,
-        #         min_samples_leaf=2,
-        #         max_features="sqrt",
-        #         random_state=42,
-        #         n_jobs=-1,
-        #     ),
-        # ),
         (
             "classifier",
             XGBClassifier(
@@ -173,79 +256,47 @@ pipeline = Pipeline(
 )
 
 # Leave-One-Group-Out Cross Validation
-# logo = LeaveOneGroupOut()
-from sklearn.utils.class_weight import compute_sample_weight
+logo = LeaveOneGroupOut()
+
 # Save metadata
 metadata_df.to_csv("window_metadata.csv", index=False)
 print(f"\nSaved metadata for {len(metadata_df)} windows to 'window_metadata.csv'")
 
-logo = LeaveOneGroupOut()
 accuracies = []
-fold = 1
+all_y_true = []
+all_y_pred = []
 
-for train_idx, test_idx in logo.split(X, y_encoded, groups):
-    print(f"\nFold {fold} | Test Group: [{groups[test_idx[0]]}]")
+print("\nRunning Leave-One-Group-Out Cross-Validation:\n")
 
+for fold, (train_idx, test_idx) in enumerate(logo.split(X, y_encoded, groups)):
     X_train, X_test = X[train_idx], X[test_idx]
     y_train, y_test = y_encoded[train_idx], y_encoded[test_idx]
-    group_test = groups[test_idx[0]]
 
-    sample_weights = compute_sample_weight(class_weight="balanced", y=y_train)
-
-    pipeline.fit(X_train, y_train, classifier__sample_weight=sample_weights)
-
+    pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
 
     acc = accuracy_score(y_test, y_pred)
-    print(f"Accuracy: {acc:.4f}")
-
     accuracies.append(acc)
-    fold += 1
+    all_y_true.extend(y_test)
+    all_y_pred.extend(y_pred)
 
+    print(
+        f"Fold {fold + 1} | Test Group: {np.unique(groups[test_idx])} | Accuracy: {acc:.4f}"
+    )
+
+# Overall results
 print("\n=== LOGO CV Summary ===")
 print(f"Mean Accuracy: {np.mean(accuracies):.4f}")
 print(f"Std Accuracy: {np.std(accuracies):.4f}")
+print("\nClassification Report (Aggregated):")
+print(classification_report(all_y_true, all_y_pred, target_names=le.classes_))
 
-# subject_test_id = 7  # sub01
-# train_mask = groups != subject_test_id
-# test_mask = groups == subject_test_id
-
-# y_encoded = le.fit_transform(y)
-# X_train, y_train = X[train_mask], y_encoded[train_mask]
-# X_test, y_test = X[test_mask], y_encoded[test_mask]
-
-# from sklearn.utils.class_weight import compute_sample_weight
-
-# sample_weights = compute_sample_weight(class_weight="balanced", y=y_train)
-# pipeline.fit(X_train, y_train, classifier__sample_weight=sample_weights)
-
-# # Predict
-# y_pred = pipeline.predict(X_test)
-
-
-# # Accuracy
-# acc = accuracy_score(y_test, y_pred)
-# print(f"Accuracy: {acc:.4f}")
-
-# # Classification Report
-# print("\nClassification Report:")
-# print(classification_report(y_test, y_pred, zero_division=0))
-
-# # Confusion Matrix
-# conf_matrix = confusion_matrix(y_test, y_pred)
-# print("\nConfusion Matrix:")
-# print(
-#     pd.DataFrame(
-#         conf_matrix,
-#         index=[f"Actual {label}" for label in pipeline.classes_],
-#         columns=[f"Predicted {label}" for label in pipeline.classes_],
-#     )
-# )
-
-# import random
-
-# # Get a list of random indices from the test set
-# sample_indices = random.sample(range(len(y_test)), min(10, len(y_test)))
-
-# for i in sample_indices:
-#     print(f"True: {y_test[i]}, Predicted: {y_pred[i]}")
+print("\nConfusion Matrix (Aggregated):")
+conf_matrix = confusion_matrix(all_y_true, all_y_pred)
+print(
+    pd.DataFrame(
+        conf_matrix,
+        index=[f"Actual {label}" for label in le.classes_],
+        columns=[f"Predicted {label}" for label in le.classes_],
+    )
+)

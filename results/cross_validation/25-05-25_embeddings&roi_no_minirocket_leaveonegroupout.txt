@@ -1,0 +1,54 @@
+Combined samples: 977
+
+Fold 1 | Test Subject: 5 | Accuracy: 0.5179
+
+Fold 2 | Test Subject: 7 | Accuracy: 0.7500
+
+Fold 3 | Test Subject: 8 | Accuracy: 0.7925
+
+Fold 4 | Test Subject: 11 | Accuracy: 0.4571
+
+Fold 5 | Test Subject: 12 | Accuracy: 0.7593
+
+Fold 6 | Test Subject: 13 | Accuracy: 0.6727
+
+Fold 7 | Test Subject: 15 | Accuracy: 0.8108
+
+Fold 8 | Test Subject: 18 | Accuracy: 0.6607
+
+Fold 9 | Test Subject: 19 | Accuracy: 0.6481
+
+Fold 10 | Test Subject: 20 | Accuracy: 0.8750
+
+Fold 11 | Test Subject: 21 | Accuracy: 0.5455
+
+Fold 12 | Test Subject: 22 | Accuracy: 0.5818
+
+Fold 13 | Test Subject: 23 | Accuracy: 0.7667
+
+Fold 14 | Test Subject: 27 | Accuracy: 0.8103
+
+Fold 15 | Test Subject: 28 | Accuracy: 0.5135
+
+Fold 16 | Test Subject: 29 | Accuracy: 0.7458
+
+Fold 17 | Test Subject: 30 | Accuracy: 0.6964
+
+Fold 18 | Test Subject: 31 | Accuracy: 0.5636
+
+Fold 19 | Test Subject: 32 | Accuracy: 0.3684
+
+Fold 20 | Test Subject: 33 | Accuracy: 0.5098
+
+=== Final Results ===
+Average Accuracy: 0.6523
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.62      0.68      0.65       333
+         low       0.75      0.68      0.71       327
+      normal       0.62      0.62      0.62       317
+
+    accuracy                           0.66       977
+   macro avg       0.66      0.66      0.66       977
+weighted avg       0.66      0.66      0.66       977
