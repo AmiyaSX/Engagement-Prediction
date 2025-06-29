@@ -42,6 +42,20 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 
 ```
 .
+├── results     # accuracy, classification reports, confusion matrices, feature importance
+│   ├── 25-05-10_minirocket_sample20.txt    # dummy
+│   ├── ...
+│   ├── cross_validation       # all the results recorded here
+│   │   ├── 02-06-25_embeddings&roi&gaze.txt
+│   │   ├── ...
+│   ├── feature_importance  # Examine features contribute most
+│   │   ├── new_roi
+│   │   │   ├── roi_feature_importance_sub-[11].csv
+│   │   │   ├── ...
+│   │   └── roi
+│   │       ├── roi_feature_importance_sub-[11].csv
+│   │       ├── ...
+│   └── model.txt   # Hyperparameter tuning result
 ├── data    # Uploaded on OneDrive. Included some raw and preprocessed data
 │   ├── mapping
 │   │   └── conditions.csv      # Label mapping condition
@@ -109,20 +123,6 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 └── src     # Source code
     ├── mapping
     │   └── conditions.csv  # Label mapping condition
-    ├── results
-    │   ├── 25-05-10_minirocket_sample20.txt    # dummy
-    │   ├── ...
-    │   ├── cross_validation       # all the results recorded here
-    │   │   ├── 02-06-25_embeddings&roi&gaze.txt
-    │   │   ├── ...
-    │   ├── feature_importance  # Examine features contribute most
-    │   │   ├── new_roi
-    │   │   │   ├── roi_feature_importance_sub-[11].csv
-    │   │   │   ├── ...
-    │   │   └── roi
-    │   │       ├── roi_feature_importance_sub-[11].csv
-    │   │       ├── ...
-    │   └── model.txt   # Hyperparameter tuning result
     └── scripts     # Training and evaluating scripts
         ├── combine     # Multimodal training
         │   ├── train_combine_gaze_embeddings_and_roi.py
