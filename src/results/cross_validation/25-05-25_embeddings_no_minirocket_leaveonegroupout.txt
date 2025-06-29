@@ -1,0 +1,35 @@
+Found 53 matched transcript pairs.
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████| 53/53 [00:10<00:00,  4.86it/s]
+
+Fold 1 | Test Subject: 5 | Accuracy: 0.5224
+Fold 2 | Test Subject: 7 | Accuracy: 0.5736
+Fold 3 | Test Subject: 8 | Accuracy: 0.5758
+Fold 4 | Test Subject: 11 | Accuracy: 0.7358
+Fold 5 | Test Subject: 12 | Accuracy: 0.6811
+Fold 6 | Test Subject: 13 | Accuracy: 0.5745
+Fold 7 | Test Subject: 15 | Accuracy: 0.6594
+Fold 8 | Test Subject: 18 | Accuracy: 0.6806
+Fold 9 | Test Subject: 19 | Accuracy: 0.5803
+Fold 10 | Test Subject: 20 | Accuracy: 0.6170
+Fold 11 | Test Subject: 21 | Accuracy: 0.6280
+Fold 12 | Test Subject: 22 | Accuracy: 0.6825
+Fold 13 | Test Subject: 23 | Accuracy: 0.6124
+Fold 14 | Test Subject: 27 | Accuracy: 0.6962
+Fold 15 | Test Subject: 28 | Accuracy: 0.4810
+Fold 16 | Test Subject: 29 | Accuracy: 0.6068
+Fold 17 | Test Subject: 30 | Accuracy: 0.6306
+Fold 18 | Test Subject: 31 | Accuracy: 0.6250
+Fold 19 | Test Subject: 32 | Accuracy: 0.8788
+Fold 20 | Test Subject: 33 | Accuracy: 0.4742
+Leave-One-Group-Out CV Results:
+Average Accuracy: 0.6258
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.56      0.65      0.60      1909
+         low       0.73      0.65      0.69      1953
+      normal       0.58      0.55      0.56      1888
+
+    accuracy                           0.62      5750
+   macro avg       0.62      0.62      0.62      5750
+weighted avg       0.62      0.62      0.62      5750

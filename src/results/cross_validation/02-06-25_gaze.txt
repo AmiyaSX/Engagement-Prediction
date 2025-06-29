@@ -1,0 +1,30 @@
+
+Fold 1 | Test Subject: 5 | Accuracy: 0.3569
+Fold 2 | Test Subject: 7 | Accuracy: 0.3064
+Fold 3 | Test Subject: 8 | Accuracy: 0.3300
+Fold 4 | Test Subject: 11 | Accuracy: 0.3603
+Fold 5 | Test Subject: 12 | Accuracy: 0.3636
+Fold 6 | Test Subject: 13 | Accuracy: 0.3232
+Fold 7 | Test Subject: 18 | Accuracy: 0.4175
+Fold 8 | Test Subject: 19 | Accuracy: 0.4175
+Fold 9 | Test Subject: 21 | Accuracy: 0.4209
+Fold 10 | Test Subject: 22 | Accuracy: 0.3502
+Fold 11 | Test Subject: 23 | Accuracy: 0.3939
+Fold 12 | Test Subject: 27 | Accuracy: 0.3636
+Fold 13 | Test Subject: 28 | Accuracy: 0.3569
+Fold 14 | Test Subject: 29 | Accuracy: 0.2694
+Fold 15 | Test Subject: 30 | Accuracy: 0.3771
+Fold 16 | Test Subject: 31 | Accuracy: 0.3333
+Fold 17 | Test Subject: 33 | Accuracy: 0.3468
+Leave-One-Group-Out CV Results:
+Average Accuracy: 0.3581
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.38      0.38      0.38      1683
+         low       0.35      0.37      0.36      1683
+      normal       0.35      0.32      0.33      1683
+
+    accuracy                           0.36      5049
+   macro avg       0.36      0.36      0.36      5049
+weighted avg       0.36      0.36      0.36      5049

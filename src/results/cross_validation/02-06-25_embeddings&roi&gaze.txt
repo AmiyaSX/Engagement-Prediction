@@ -1,0 +1,30 @@
+Fold 1 | Subject 5 | Acc: 0.4265
+Fold 2 | Subject 7 | Acc: 0.6667
+Fold 3 | Subject 8 | Acc: 0.6013
+Fold 4 | Subject 11 | Acc: 0.4062
+Fold 5 | Subject 12 | Acc: 0.5455
+Fold 6 | Subject 13 | Acc: 0.7463
+Fold 7 | Subject 18 | Acc: 0.3799
+Fold 8 | Subject 19 | Acc: 0.7879
+Fold 9 | Subject 21 | Acc: 0.4940
+Fold 10 | Subject 22 | Acc: 0.5692
+Fold 11 | Subject 23 | Acc: 0.6417
+Fold 12 | Subject 27 | Acc: 0.9333
+Fold 13 | Subject 28 | Acc: 0.4527
+Fold 14 | Subject 29 | Acc: 0.7727
+Fold 15 | Subject 30 | Acc: 0.6593
+Fold 16 | Subject 31 | Acc: 0.5000
+Fold 17 | Subject 33 | Acc: 0.6570
+
+=== Final Results ===
+Average Accuracy: 0.6024
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.60      0.65      0.62       999
+         low       0.57      0.60      0.59       782
+      normal       0.61      0.52      0.56       749
+
+    accuracy                           0.59      2530
+   macro avg       0.59      0.59      0.59      2530
+weighted avg       0.60      0.59      0.59      2530
