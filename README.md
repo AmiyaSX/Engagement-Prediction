@@ -1,5 +1,45 @@
 # Engagement-Prediction
 
+This project aims to predict engagement levels from multimodal behavioral and physiological data, including transcripts, eye-tracking, speech pauses, and brain signals. 
+
+It uses a combination of statistical features, time series methods, and machine learning models to train and evaluate engagement classification across various conditions.
+
+## Modalities & Training
+
+| **Modality**   | **Description**                                                                                           | **Location**          |
+| -------------- | --------------------------------------------------------------------------------------------------------- | --------------------- |
+| **Embeddings** | Vector representations extracted from transcripts (e.g., using sentence embeddings or contextual models). | `scripts/embeddings/` |
+| **Gaze**       | Eye-tracking features such as fixation duration, saccades, and gaze variability.                          | `scripts/gaze/`       |
+| **Pauses**     | Features based on speech activity timing: production, comprehension, pauses, and turn-taking gaps.        | `scripts/pauses/`     |
+| **ROI**        | Neural activity features derived from brain region signals (Regions of Interest).                         | `scripts/roi/`        |
+| **Combined**   | Multimodal models combining two or more of the above modalities (e.g., ROI + Gaze).                       | `scripts/combine/`    |
+
+
+## Evaluation
+
+- Cross-validation is performed using Leave-One-Subject-Out strategy.
+
+- Results (accuracy, classification reports, confusion matrices) are logged under results/cross_validation/.
+
+- Feature importance for ROI-based models is saved under results/feature_importance/.
+
+## Setup
+1. Install dependencies
+
+```
+pip install -r requirements.txt
+```
+
+2. Prepare Data
+ 
+Ensure all required data files (e.g., gaze, embeddings, ROI, pause data) are downloaded.
+
+Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignment and feature extraction)
+
+
+
+## Project Structure
+
 ```
 .
 ├── data    # Uploaded on OneDrive. Included some raw and preprocessed data
