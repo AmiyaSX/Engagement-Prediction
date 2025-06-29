@@ -43,12 +43,12 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 ```
 .
 ├── results     # accuracy, classification reports, confusion matrices, feature importance
-│   ├── 25-05-10_minirocket_sample20.txt    # dummy
+│   ├── 25-05-10_minirocket_sample20.txt      # dummy
 │   ├── ...
-│   ├── cross_validation       # all the results recorded here
+│   ├── cross_validation            # all the results recorded here
 │   │   ├── 02-06-25_embeddings&roi&gaze.txt
 │   │   ├── ...
-│   ├── feature_importance  # Examine features contribute most
+│   ├── feature_importance          # Examine features contribute most
 │   │   ├── new_roi
 │   │   │   ├── roi_feature_importance_sub-[11].csv
 │   │   │   ├── ...
@@ -56,9 +56,9 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 │   │       ├── roi_feature_importance_sub-[11].csv
 │   │       ├── ...
 │   └── model.txt   # Hyperparameter tuning result
-├── data    # Uploaded on OneDrive. Included some raw and preprocessed data
+├── data                            # Uploaded on OneDrive. Included some raw and preprocessed data
 │   ├── mapping
-│   │   └── conditions.csv      # Label mapping condition
+│   │   └── conditions.csv          # Label mapping condition
 │   └── raw
 │       ├── brain
 │       │   ├── aligned
@@ -68,7 +68,7 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 │       │   │   ├── raw
 │       │   │   │   ├── sub-05_roi_data.csv
 │       │   │   │   ├── ...
-│       │   │   └── train   # use in training, added timestamps (new)
+│       │   │   └── train           # use in training, added timestamps (new)
 │       │   │       ├── sub-05_roi_data_with_timestamps.csv
 │       │   │       ├── ...
 │       │   └── train   # use in training, added timestamps (old)
@@ -97,7 +97,7 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 │       ├── pause
 │       │   └── prod_comp_gaps_pauses_all_included.csv
 │       ├── transcripts
-│       │   ├── embeddings      # Real in use. Genimi generated embeddings
+│       │   ├── embeddings     # Real in use. Genimi generated embeddings
 │       │   │   ├── sub-01_operator_run-01_embeddings.json
 │       │   │   ├── ...
 │       │   ├── ignore
@@ -110,7 +110,7 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 │       │       ├── sub-05_participant_run-01.csv
 │       │       ├── ...
 │       └── video
-│           ├── origin  # Origin Video of subjects in use
+│           ├── origin        # Origin Video of subjects in use
 │           │   ├── sub-05_run-01.mp4
 │           │   ├── ...
 │           ├── subjects_manually_calibrate     # Applied offsets to see the expected eye points
@@ -119,27 +119,27 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 │           └── video_with_eyetracking          # Video visualizing the eye-tracking and head tracking
 │               ├── gaze_overlay_sub-05_run-01.mp4
 │               ├── ...
-├── requirements.txt    # Python library requirements
-└── src     # Source code
+├── requirements.txt         # Python library requirements
+└── src                      # Source code
     ├── mapping
-    │   └── conditions.csv  # Label mapping condition
-    └── scripts     # Training and evaluating scripts
-        ├── combine     # Multimodal training
+    │   └── conditions.csv   # Label mapping condition
+    └── scripts              # Training and evaluating scripts
+        ├── combine          # Multimodal training
         │   ├── train_combine_gaze_embeddings_and_roi.py
         │   ├── train_combine_gaze_with_roi.py
         │   └── train_combine_roi_with_embeddings.py
-        ├── embeddings  # Embeddings(transcripts) data training
+        ├── embeddings       # Embeddings(transcripts) data training
         │   ├── train_embeddings_only_oper.py
         │   ├── train_embeddings_only_par.py
         │   ├── train_minirocket_embeddings+.py
         │   └── train_minirocket_embeddings.py
-        ├── gaze    # Gaze data training
+        ├── gaze             # Gaze data training
         │   ├── test_gaze_minirocket.py
         │   ├── train_minirocket_gaze.py
         │   └── train_svm.py
-        ├── pauses  # Pauses and turn-taking data training
+        ├── pauses           # Pauses and turn-taking data training
         │   └── train_prod_comp_gaps_pauses.py
-        ├── preprocess   # To preprocess multimodal data and some visualization scripts
+        ├── preprocess       # To preprocess multimodal data and some visualization scripts
         │   ├── brain_data_add_timestamp.py
         │   ├── data_align.py
         │   ├── eyetracking_visualization.py
@@ -148,7 +148,7 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
         │   ├── gaze_feature_extraction_allfile.py
         │   ├── gaze_feature_extractionv2.py
         │   └── sample_data.py
-        └── roi     # brain data training
+        └── roi             # brain data training
             ├── train_minirocket_roi.py
             ├── train_roi.py
             └── train_roi_new.py
