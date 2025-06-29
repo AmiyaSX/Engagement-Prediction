@@ -55,8 +55,8 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 │   │   └── roi
 │   │       ├── roi_feature_importance_sub-[11].csv
 │   │       ├── ...
-│   └── model.txt   # Hyperparameter tuning result
-├── data                            # Uploaded on OneDrive. Included some raw and preprocessed data
+│   └── model.txt                   # Hyperparameter tuning result
+├── data       # Uploaded on OneDrive. Included some raw and preprocessed data
 │   ├── mapping
 │   │   └── conditions.csv          # Label mapping condition
 │   └── raw
@@ -71,7 +71,7 @@ Details in preprocessing refer to scripts in scripts/preprocess/. (Data alignmen
 │       │   │   └── train           # use in training, added timestamps (new)
 │       │   │       ├── sub-05_roi_data_with_timestamps.csv
 │       │   │       ├── ...
-│       │   └── train   # use in training, added timestamps (old)
+│       │   └── train               # use in training, added timestamps (old)
 │       │       ├── sub-05_roi_data_with_timestamps.csv
 │       │       ├── ...
 │       ├── eyetracking
