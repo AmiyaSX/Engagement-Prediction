@@ -8,7 +8,7 @@ It uses a combination of statistical features, time series methods, and machine 
 
 | **Modality**   | **Description**                                                                                           | **Location**          |
 | -------------- | --------------------------------------------------------------------------------------------------------- | --------------------- |
-| **Embeddings** | Vector representations extracted from transcripts (using utterance embeddings with Genimi model). | `scripts/embeddings/` |
+| **Embeddings** | Vector representations extracted from transcripts (using utterance embeddings with Gemini model). | `scripts/embeddings/` |
 | **Gaze**       | Eye-tracking features such as fixation duration, saccades, and gaze variability.                          | `scripts/gaze/`       |
 | **Pauses**     | Features based on speech activity timing: production, comprehension, pauses, and turn-taking gaps.        | `scripts/pauses/`     |
 | **ROI**        | Neural activity features derived from brain region signals (Regions of Interest).                         | `scripts/roi/`        |
