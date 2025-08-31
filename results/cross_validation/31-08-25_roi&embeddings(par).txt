@@ -1,0 +1,61 @@
+/opt/homebrew/anaconda3/envs/engagement_prediction/bin/pyth
+on "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/src/scripts/combine/train_combine_roi_embeddings.py"
+Loading text transcript data...
+Found 53 matched transcript pairs.
+Loading brain ROI data...
+Brain data shape: (6602, 3, 11)
+100%|████████████████████████████████████████████████████████████████████████████████████| 53/53 [00:09<00:00,  5.67it/s]
+Combined samples: 1057
+
+Fold 1 | Test Subject: 5 | Accuracy: 0.3167
+
+Fold 2 | Test Subject: 7 | Accuracy: 0.6833
+
+Fold 3 | Test Subject: 8 | Accuracy: 0.5333
+
+Fold 4 | Test Subject: 11 | Accuracy: 0.2051
+
+Fold 5 | Test Subject: 12 | Accuracy: 0.6167
+
+Fold 6 | Test Subject: 13 | Accuracy: 0.5167
+
+Fold 7 | Test Subject: 15 | Accuracy: 0.5750
+
+Fold 8 | Test Subject: 18 | Accuracy: 0.3667
+
+Fold 9 | Test Subject: 19 | Accuracy: 0.3966
+
+Fold 10 | Test Subject: 20 | Accuracy: 0.9500
+
+Fold 11 | Test Subject: 21 | Accuracy: 0.4667
+
+Fold 12 | Test Subject: 22 | Accuracy: 0.6000
+
+Fold 13 | Test Subject: 23 | Accuracy: 0.6667
+
+Fold 14 | Test Subject: 27 | Accuracy: 0.6667
+
+Fold 15 | Test Subject: 28 | Accuracy: 0.4000
+
+Fold 16 | Test Subject: 29 | Accuracy: 0.5333
+
+Fold 17 | Test Subject: 30 | Accuracy: 0.7500
+
+Fold 18 | Test Subject: 31 | Accuracy: 0.4333
+
+Fold 19 | Test Subject: 32 | Accuracy: 0.4000
+
+Fold 20 | Test Subject: 33 | Accuracy: 0.3500
+
+=== Final Results ===
+Average Accuracy: 0.5213
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.63      0.66      0.64       359
+         low       0.48      0.50      0.49       359
+      normal       0.43      0.38      0.41       339
+
+    accuracy                           0.52      1057
+   macro avg       0.51      0.52      0.51      1057
+weighted avg       0.51      0.52      0.51      1057

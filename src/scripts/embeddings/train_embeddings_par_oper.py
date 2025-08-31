@@ -1,26 +1,22 @@
 import pandas as pd
 import os
 import json
-from datetime import timedelta
+from sklearn.preprocessing import LabelEncoder
+from sklearn.pipeline import Pipeline
+import joblib
+from sklearn.model_selection import LeaveOneGroupOut
+from xgboost import XGBClassifier
+from sklearn.metrics import accuracy_score, classification_report
 from google.api_core import retry
 import google.generativeai as genai
 from tqdm import tqdm
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
-from sklearn.pipeline import make_pipeline
-from sklearn.pipeline import Pipeline
-import joblib
-from sktime.transformations.panel.rocket import MiniRocket
-from sklearn.model_selection import LeaveOneGroupOut, GridSearchCV, train_test_split
-from xgboost import XGBClassifier
-from sklearn.linear_model import RidgeClassifierCV
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
 import glob
 
 WINDOW_SIZE = 12
 STEP_SIZE = 5
+STEP_SIZE = 5
+BUFFER = 600
 
 # Setup Gemini API client
 genai.configure(api_key="My key")
@@ -54,7 +50,7 @@ def load_transcripts(dir_path):
 
     for file_path in glob.glob(f"{dir_path}/*.csv"):
         filename = os.path.basename(file_path)
-        # print(filename)
+
         subject_id = int(filename.split("_")[0].split("-")[1])
         run_id = int(filename.split("_")[2].replace(".csv", "").split("-")[1])
         label_row = mapping_df[
@@ -129,11 +125,18 @@ def main():
 
         for win_start in np.arange(0, max_time - WINDOW_SIZE + 1, STEP_SIZE):
             win_end = win_start + WINDOW_SIZE
+            # part_in_window = part[
+            #     (part["mid_time"] >= win_start) & (part["mid_time"] <= win_end)
+            # ]
+            # oper_in_window = oper[
+            #     (oper["mid_time"] >= win_start) & (oper["mid_time"] <= win_end)
+            # ]
+            buffer_start = max(0, win_start - BUFFER)
             part_in_window = part[
-                (part["mid_time"] >= win_start) & (part["mid_time"] <= win_end)
+                (part["start_sec"] >= buffer_start) & (part["start_sec"] <= win_end)
             ]
             oper_in_window = oper[
-                (oper["mid_time"] >= win_start) & (oper["mid_time"] <= win_end)
+                (oper["start_sec"] >= buffer_start) & (oper["start_sec"] <= win_end)
             ]
             if part_in_window.empty:
                 continue  # Skip empty windows
@@ -152,28 +155,6 @@ def main():
             part_avg = np.mean(part_embeds, axis=0).reshape(-1)
             oper_avg = np.mean(oper_embeds, axis=0).reshape(-1)
 
-            # ----------- Participant Features ------------
-            # part_utterance_count = len(part_in_window)
-
-            # part_utterance_lengths = part_in_window["transcription"].apply(
-            #     lambda t: len(str(t).split())
-            # )
-            # part_avg_utterance_length = part_utterance_lengths.mean()
-
-            # part_total_words = part_utterance_lengths.sum()
-            # part_total_speaking_time = (
-            #     part_in_window["end_sec"].sum() - part_in_window["start_sec"].sum()
-            # )
-            # part_speaking_rate = (
-            #     part_total_words / part_total_speaking_time
-            #     if part_total_speaking_time > 0
-            #     else 0.0
-            # )
-            # # ----------- Combine Everything ------------
-            # extra_features = np.array(
-            #     [part_utterance_count, part_avg_utterance_length, part_speaking_rate]
-            # )
-
             combined = np.concatenate([part_avg, oper_avg])
             X.append(combined)
             y.append(part["eng_level"].iloc[0])
@@ -189,8 +170,6 @@ def main():
     le = LabelEncoder()
     y_encoded = le.fit_transform(y)
 
-    # X = X.reshape((X.shape[0], 1, X.shape[1]))
-
     logo = LeaveOneGroupOut()
     accuracies = []
     all_y_true, all_y_pred = [], []
@@ -201,7 +180,6 @@ def main():
 
         pipeline = Pipeline(
             steps=[
-                # ("transform", MiniRocket(random_state=42)),
                 (
                     "classifier",
                     XGBClassifier(

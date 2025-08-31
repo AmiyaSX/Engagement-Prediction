@@ -13,6 +13,7 @@ from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 from scipy.stats import skew, kurtosis, entropy
 from scipy.fftpack import fft
+import matplotlib.pyplot as plt
 
 # Constants
 WINDOW_SIZE = 10  # samples, 12s
@@ -130,22 +131,6 @@ def extract_features_from_window(window):
                 slope_changes,
             ]
         )
-
-    # Cross-ROI correlations
-    for i in range(num_rois):
-        for j in range(i + 1, num_rois):
-            corr = np.corrcoef(window[i], window[j])[0, 1]
-            features.append(corr)
-
-    # Lagged cross-ROI correlations
-    for lag in [1, 2, 3]:
-        for i in range(num_rois):
-            for j in range(i + 1, num_rois):
-                try:
-                    lagged_corr = np.corrcoef(window[i][:-lag], window[j][lag:])[0, 1]
-                except:
-                    lagged_corr = 0
-                features.append(lagged_corr)
 
     return features
 
@@ -316,19 +301,6 @@ for fold, (train_idx, test_idx) in enumerate(logo.split(X, y_encoded, groups)):
     for roi in roi_labels:
         for stat in roi_stats:
             feature_names.append(f"{roi}_{stat}")
-
-    # Cross-ROI correlations
-    for i in range(len(roi_labels)):
-        for j in range(i + 1, len(roi_labels)):
-            feature_names.append(f"corr_{roi_labels[i]}_vs_{roi_labels[j]}")
-
-    # Lagged cross-ROI correlations
-    for lag in [1, 2, 3]:
-        for i in range(len(roi_labels)):
-            for j in range(i + 1, len(roi_labels)):
-                feature_names.append(
-                    f"lag{lag}_corr_{roi_labels[i]}_vs_{roi_labels[j]}"
-                )
 
     # Sanity check
     assert len(feature_names) == X.shape[1], "Feature name count mismatch"

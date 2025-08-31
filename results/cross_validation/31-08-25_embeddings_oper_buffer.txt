@@ -1,0 +1,58 @@
+
+/opt/homebrew/anaconda3/envs/engagement_prediction/bin/python "/V
+olumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/src/scripts/embeddings/train_embeddings_only_oper.py"
+Found 53 matched transcript pairs.
+100%|██████████████████████████████████████████████████████████████████████████████████████████| 53/53 [01:23<00:00,  1.58s/it]
+
+Fold 1 | Test Subject: 5 | Accuracy: 0.7699
+
+Fold 2 | Test Subject: 7 | Accuracy: 0.9034
+
+Fold 3 | Test Subject: 8 | Accuracy: 0.9068
+
+Fold 4 | Test Subject: 11 | Accuracy: 0.8475
+
+Fold 5 | Test Subject: 12 | Accuracy: 0.8571
+
+Fold 6 | Test Subject: 13 | Accuracy: 0.8898
+
+Fold 7 | Test Subject: 15 | Accuracy: 0.9449
+
+Fold 8 | Test Subject: 18 | Accuracy: 0.7869
+
+Fold 9 | Test Subject: 19 | Accuracy: 0.7926
+
+Fold 10 | Test Subject: 20 | Accuracy: 0.9237
+
+Fold 11 | Test Subject: 21 | Accuracy: 0.9124
+
+Fold 12 | Test Subject: 22 | Accuracy: 0.9294
+
+Fold 13 | Test Subject: 23 | Accuracy: 0.9517
+
+Fold 14 | Test Subject: 27 | Accuracy: 0.9857
+
+Fold 15 | Test Subject: 28 | Accuracy: 0.9873
+
+Fold 16 | Test Subject: 29 | Accuracy: 0.9659
+
+Fold 17 | Test Subject: 30 | Accuracy: 0.6287
+
+
+Fold 18 | Test Subject: 31 | Accuracy: 0.8785
+
+Fold 19 | Test Subject: 32 | Accuracy: 0.9915
+
+Fold 20 | Test Subject: 33 | Accuracy: 0.5881
+Leave-One-Group-Out CV Results:
+Average Accuracy: 0.8721
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.82      0.89      0.85      2122
+         low       0.87      0.84      0.86      2096
+      normal       0.91      0.86      0.89      2002
+
+    accuracy                           0.86      6220
+   macro avg       0.87      0.86      0.86      6220
+weighted avg       0.87      0.86      0.86      6220

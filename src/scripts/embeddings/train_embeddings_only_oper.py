@@ -19,6 +19,7 @@ import glob
 
 WINDOW_SIZE = 12
 STEP_SIZE = 5
+BUFFER = 600
 
 # Setup Gemini API client
 genai.configure(api_key="My key")
@@ -121,8 +122,12 @@ def main():
 
         for win_start in np.arange(0, max_time - WINDOW_SIZE + 1, STEP_SIZE):
             win_end = win_start + WINDOW_SIZE
+            # oper_in_window = oper[
+            #     (oper["mid_time"] >= win_start) & (oper["mid_time"] <= win_end)
+            # ]
+            buffer_start = max(0, win_start - BUFFER)
             oper_in_window = oper[
-                (oper["mid_time"] >= win_start) & (oper["mid_time"] <= win_end)
+                (oper["start_sec"] >= buffer_start) & (oper["start_sec"] <= win_end)
             ]
             if oper_in_window.empty:
                 continue  # Skip empty windows

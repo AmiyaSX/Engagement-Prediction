@@ -7,9 +7,10 @@ from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.metrics import accuracy_score, classification_report
 from xgboost import XGBClassifier
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 # === CONFIG ===
-data_path = "data/raw/pause/prod_comp_gaps_pauses.csv"
+data_path = "data/raw/pause/prod_comp_gaps_pauses_all_included.csv"
 WINDOW_SIZE = 12  # seconds
 STEP_SIZE = 5  # seconds
 EVENT_TYPES = [
@@ -146,7 +147,34 @@ for fold, (train_idx, test_idx) in enumerate(logo.split(X, y_encoded, groups), 1
 
     print(f"Fold {fold} | Subject {groups.iloc[test_idx[0]]} | Accuracy: {acc:.4f}")
 
+# === Final Results ===
 print("\n=== Final Results ===")
 print(f"Average Accuracy: {np.mean(accuracies):.4f}")
 print("Classification Report:")
 print(classification_report(all_y_true, all_y_pred, target_names=le.classes_))
+
+# === Feature Importance Extraction ===
+print("\n=== Extracting Feature Importances ===")
+importances = pipeline.named_steps["classifier"].feature_importances_
+feature_names = X.columns.tolist()
+
+importance_df = pd.DataFrame(
+    {"Feature": feature_names, "Importance": importances}
+).sort_values(by="Importance", ascending=False)
+
+# Save to CSV
+importance_df.to_csv("pause_feature_importance_no_duration.csv", index=False)
+
+# Print top 10 features
+print("\nTop 10 Important Features (from XGBoost):")
+print(importance_df.head(10))
+
+top_n = 10
+importance_df.head(top_n).plot.barh(
+    x="Feature", y="Importance", figsize=(8, 4), legend=False
+)
+plt.gca().invert_yaxis()
+plt.title("Top 10 Pause-Based Feature Importances")
+plt.xlabel("Importance Score")
+plt.tight_layout()
+plt.show()

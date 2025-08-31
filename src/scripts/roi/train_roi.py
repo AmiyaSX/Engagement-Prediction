@@ -10,6 +10,7 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 import pandas as pd
 from scipy.stats import skew, kurtosis, entropy
 from scipy.fftpack import fft
+import matplotlib.pyplot as plt
 
 # Constants
 WINDOW_SIZE = 10  # 10 samples, 12s
@@ -322,6 +323,18 @@ for fold, (train_idx, test_idx) in enumerate(logo.split(X, y_encoded, groups)):
     feature_importance_df.to_csv(
         f"roi_feature_importance_sub-{np.unique(groups[test_idx])}.csv", index=False
     )
+    print("\nTop 10 Important Features (from XGBoost):")
+    print(feature_importance_df.head(10))
+
+    top_n = 10
+    feature_importance_df.head(top_n).plot.barh(
+        x="Feature", y="Importance", figsize=(8, 4), legend=False
+    )
+    plt.gca().invert_yaxis()
+    plt.title("Top 10 ROI Comp vs Prod Feature Importances")
+    plt.xlabel("Importance Score")
+    plt.tight_layout()
+    plt.show()
 
 
 # Overall results
