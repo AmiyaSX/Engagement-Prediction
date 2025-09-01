@@ -1,0 +1,38 @@
+/opt/homebrew/anaconda3/envs/engagement_prediction/
+bin/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/src/scripts/combine/train_cmbine_gaze_pause
+s.py"
+Loading gaze data...
+Loading pause features...
+Combining gaze and pause features...
+Number of combined samples: 544
+Running Leave-One-Group-Out CV...
+Fold 1 | Subject 5 | Accuracy: 0.5614
+Fold 2 | Subject 7 | Accuracy: 0.5714
+Fold 3 | Subject 8 | Accuracy: 0.3226
+Fold 4 | Subject 11 | Accuracy: 0.6250
+Fold 5 | Subject 12 | Accuracy: 0.5000
+Fold 6 | Subject 13 | Accuracy: 0.5116
+Fold 7 | Subject 18 | Accuracy: 0.4561
+Fold 8 | Subject 19 | Accuracy: 0.6818
+Fold 9 | Subject 21 | Accuracy: 0.4118
+Fold 10 | Subject 22 | Accuracy: 0.5088
+Fold 11 | Subject 23 | Accuracy: 0.4737
+Fold 12 | Subject 27 | Accuracy: 0.5926
+Fold 13 | Subject 28 | Accuracy: 0.2955
+Fold 14 | Subject 29 | Accuracy: 0.4737
+Fold 15 | Subject 30 | Accuracy: 0.2941
+Fold 16 | Subject 31 | Accuracy: 0.7500
+Fold 17 | Subject 33 | Accuracy: 0.3684
+
+=== Final Results ===
+Average Accuracy: 0.4940
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.47      0.68      0.55       226
+         low       0.54      0.46      0.50       167
+      normal       0.39      0.19      0.26       151
+
+    accuracy                           0.48       544
+   macro avg       0.47      0.44      0.44       544
+weighted avg       0.47      0.48      0.45       544

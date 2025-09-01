@@ -19,7 +19,7 @@ import glob
 
 WINDOW_SIZE = 12
 STEP_SIZE = 5
-BUFFER = 600
+BUFFER = 30
 
 # Setup Gemini API client
 genai.configure(api_key="My key")

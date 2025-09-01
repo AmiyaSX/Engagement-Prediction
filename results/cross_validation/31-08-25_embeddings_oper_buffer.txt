@@ -38,7 +38,6 @@ Fold 16 | Test Subject: 29 | Accuracy: 0.9659
 
 Fold 17 | Test Subject: 30 | Accuracy: 0.6287
 
-
 Fold 18 | Test Subject: 31 | Accuracy: 0.8785
 
 Fold 19 | Test Subject: 32 | Accuracy: 0.9915
