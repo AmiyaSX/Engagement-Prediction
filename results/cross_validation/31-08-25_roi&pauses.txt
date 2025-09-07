@@ -1,46 +1,47 @@
-/opt/homebrew/anaconda3/envs/engagement_prediction/bin/python "/Volumes/Seagate Expansi/KTH/Thes
-is/Engagement-Prediction/src/scripts/combine/train_combine_roi_pauses.py"
-Pauses: windows: 100%|███████████████████████████████████████████████████████████████████████████████████████████| 60/60 [00:11<00:00,  5.02it/s]
-ROI: windows: 100%|██████████████████████████████████████████████████████████████████████████████████████████████| 19/19 [00:17<00:00,  1.08it/s]
+/opt/homebrew/anaconda3/envs/engagement_prediction/bin/
+python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/src/scripts/combine/train_combine_roi_pauses.py"
+Pauses: windows: 100%|███████████████████████████████████████████████████████████████| 60/60 [00:12<00:00,  4.86it/s]
+ROI: swta: 100%|█████████████████████████████████████████████████████████████████████| 19/19 [00:19<00:00,  1.04s/it]
+ROI: comp_prod: 100%|████████████████████████████████████████████████████████████████| 20/20 [00:19<00:00,  1.02it/s]
 
-=== Multimodal (Pauses + ROI) | N=5774 windows, D=135 features ===
+=== Multimodal (Pauses + ROI) | N=5774 windows, D=198 features ===
 
-Fold 01 | Test subject(s): [5] | Acc: 0.8787
-Fold 02 | Test subject(s): [7] | Acc: 0.9638
-Fold 03 | Test subject(s): [8] | Acc: 0.6414
-Fold 04 | Test subject(s): [11] | Acc: 0.3475
-Fold 05 | Test subject(s): [12] | Acc: 0.7180
-Fold 06 | Test subject(s): [13] | Acc: 0.8918
-Fold 07 | Test subject(s): [15] | Acc: 0.9804
-Fold 08 | Test subject(s): [18] | Acc: 0.5980
-Fold 09 | Test subject(s): [19] | Acc: 0.7738
-Fold 10 | Test subject(s): [20] | Acc: 0.9410
-Fold 11 | Test subject(s): [21] | Acc: 0.6471
-Fold 12 | Test subject(s): [22] | Acc: 0.6885
-Fold 13 | Test subject(s): [23] | Acc: 0.9314
-Fold 14 | Test subject(s): [27] | Acc: 0.9770
-Fold 15 | Test subject(s): [28] | Acc: 0.5592
-Fold 16 | Test subject(s): [29] | Acc: 0.9542
-Fold 17 | Test subject(s): [30] | Acc: 0.9336
-Fold 18 | Test subject(s): [31] | Acc: 0.5625
-Fold 19 | Test subject(s): [32] | Acc: 1.0000
+Fold 01 | Test subject(s): [5] | Acc: 0.5016
+Fold 02 | Test subject(s): [7] | Acc: 0.7599
+Fold 03 | Test subject(s): [8] | Acc: 0.7138
+Fold 04 | Test subject(s): [11] | Acc: 0.4787
+Fold 05 | Test subject(s): [12] | Acc: 0.7934
+Fold 06 | Test subject(s): [13] | Acc: 0.6525
+Fold 07 | Test subject(s): [15] | Acc: 0.7745
+Fold 08 | Test subject(s): [18] | Acc: 0.4837
+Fold 09 | Test subject(s): [19] | Acc: 0.5770
+Fold 10 | Test subject(s): [20] | Acc: 0.8229
+Fold 11 | Test subject(s): [21] | Acc: 0.4118
+Fold 12 | Test subject(s): [22] | Acc: 0.5148
+Fold 13 | Test subject(s): [23] | Acc: 0.7908
+Fold 14 | Test subject(s): [27] | Acc: 0.7697
+Fold 15 | Test subject(s): [28] | Acc: 0.4572
+Fold 16 | Test subject(s): [29] | Acc: 0.8203
+Fold 17 | Test subject(s): [30] | Acc: 0.6910
+Fold 18 | Test subject(s): [31] | Acc: 0.3914
+Fold 19 | Test subject(s): [32] | Acc: 0.3934
 
 === Final Results ===
-Average Accuracy: 0.7888  (± 0.1850)
+Average Accuracy: 0.6210  (± 0.1556)
 Classification Report:
               precision    recall  f1-score   support
 
-        high       0.69      0.67      0.68      1918
-         low       0.68      0.69      0.69      1923
-      medium       1.00      1.00      1.00      1933
+        high       0.58      0.56      0.57      1918
+         low       0.68      0.66      0.67      1923
+      medium       0.60      0.64      0.62      1933
 
-    accuracy                           0.79      5774
-   macro avg       0.79      0.79      0.79      5774
-weighted avg       0.79      0.79      0.79      5774
+    accuracy                           0.62      5774
+   macro avg       0.62      0.62      0.62      5774
+weighted avg       0.62      0.62      0.62      5774
 
 
 Confusion Matrix:
                Pred high  Pred low  Pred medium
-Actual high         1286       632            0
-Actual low           590      1333            0
-Actual medium          0         0         1933
+Actual high         1074       332          512
+Actual low           351      1268          304
+Actual medium        419       274         1240

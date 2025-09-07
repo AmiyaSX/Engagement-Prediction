@@ -158,7 +158,6 @@ def main():
 
     pipeline = Pipeline(
         [
-            ("transform", MiniRocket(random_state=42)),
             (
                 "clf",
                 XGBClassifier(

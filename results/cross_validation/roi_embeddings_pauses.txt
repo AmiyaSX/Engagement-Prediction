@@ -1,0 +1,48 @@
+ /opt/homebrew/anaconda3/envs/engagement_
+prediction/bin/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/src/scripts/combine/t
+rain_all_modalities.py"
+Pauses: windows: 100%|████████████████████████████████████████████████| 60/60 [00:11<00:00,  5.03it/s]
+ROI: swta: 100%|██████████████████████████████████████████████████████| 19/19 [00:19<00:00,  1.00s/it]
+ROI: comp_prod: 100%|█████████████████████████████████████████████████| 20/20 [00:18<00:00,  1.09it/s]
+[INFO] Final samples: 4838
+[INFO] Fused input shape: 4838
+=== Training & Evaluating (LOGO CV) ===
+Fold 01 | Subject(s): [5] | Acc: 0.4626
+Fold 02 | Subject(s): [7] | Acc: 0.7671
+Fold 03 | Subject(s): [8] | Acc: 0.7041
+Fold 04 | Subject(s): [11] | Acc: 0.3770
+Fold 05 | Subject(s): [12] | Acc: 0.7687
+Fold 06 | Subject(s): [13] | Acc: 0.6267
+Fold 07 | Subject(s): [15] | Acc: 0.7577
+Fold 08 | Subject(s): [18] | Acc: 0.4369
+Fold 09 | Subject(s): [19] | Acc: 0.4765
+Fold 10 | Subject(s): [20] | Acc: 0.9024
+Fold 11 | Subject(s): [21] | Acc: 0.5966
+Fold 12 | Subject(s): [22] | Acc: 0.6575
+Fold 13 | Subject(s): [23] | Acc: 0.7449
+Fold 14 | Subject(s): [27] | Acc: 0.8362
+Fold 15 | Subject(s): [28] | Acc: 0.4691
+Fold 16 | Subject(s): [29] | Acc: 0.8163
+Fold 17 | Subject(s): [30] | Acc: 0.7812
+Fold 18 | Subject(s): [31] | Acc: 0.5205
+Fold 19 | Subject(s): [32] | Acc: 0.4286
+
+=== Final Results ===
+Average Accuracy: 0.6385  (± 0.1588)
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.66      0.68      0.67      1635
+         low       0.67      0.67      0.67      1648
+      medium       0.59      0.58      0.58      1555
+
+    accuracy                           0.64      4838
+   macro avg       0.64      0.64      0.64      4838
+weighted avg       0.64      0.64      0.64      4838
+
+
+Confusion Matrix:
+               Pred high  Pred low  Pred medium
+Actual high         1115       202          318
+Actual low           238      1098          312
+Actual medium        331       329          895

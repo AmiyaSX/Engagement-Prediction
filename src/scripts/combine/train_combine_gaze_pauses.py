@@ -1,5 +1,3 @@
-# Early Fusion of Gaze and Pause Features for Engagement Prediction
-
 import os
 import glob
 import json
@@ -17,6 +15,8 @@ from xgboost import XGBClassifier
 # === CONFIGURATION ===
 WINDOW_SIZE = 12
 STEP_SIZE = 5
+EMBEDDING_DIM = 3072
+BUFFER = 30
 
 mapping_df = pd.read_csv("data/mapping/conditions.csv")
 mapping_df.columns = mapping_df.columns.str.strip()
@@ -34,43 +34,43 @@ def extract_id(file_name):
     return f"{subject}_run-{run}"
 
 
-def load_pause_features(file_path, window_size=12, step_size=5):
-    pause_df = pd.read_csv(file_path)
-    pause_df["subject"] = pause_df["filename"].apply(
-        lambda x: int(x.split("_")[0].split("-")[1])
-    )
-    pause_df["run"] = pause_df["filename"].apply(
-        lambda x: int(x.split("_")[1].split("-")[1])
-    )
-
-    pause_features = {}
-    event_types = ["pause_p", "pause_c", "gap_p2c", "gap_c2p"]
-    grouped = pause_df.groupby(["subject", "run"])
-
-    for (subject, run), group in grouped:
-        max_time = group["start_time"].max() + group["duration"].max()
-        for start in np.arange(0, max_time - window_size + 1, step_size):
-            end = start + window_size
-            window = group[(group["start_time"] >= start) & (group["start_time"] < end)]
-            if window.empty:
+def load_transcripts(dir_path):
+    all_data = []
+    for file_path in glob.glob(f"{dir_path}/*.csv"):
+        filename = os.path.basename(file_path)
+        try:
+            subject_id = int(filename.split("_")[0].split("-")[1])
+            run_id = int(filename.split("_")[2].replace(".csv", "").split("-")[1])
+        except Exception as e:
+            continue
+        label_row = mapping_df[
+            (mapping_df["subject_id"] == subject_id) & (mapping_df["run"] == run_id)
+        ]
+        if label_row.empty:
+            continue
+        label = label_row["EngagementLevel"].values[0]
+        df = pd.read_csv(file_path)
+        if "transcription" not in df.columns:
+            continue
+        df["subject_id"] = subject_id
+        df["start_sec"] = df["start_time"]
+        df["end_sec"] = df["end_time"]
+        df["file"] = filename
+        df["eng_level"] = label
+        cache_path = f"data/raw/transcripts/embeddings/{filename.replace('.csv', '')}_embeddings.json"
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+        if os.path.exists(cache_path):
+            with open(cache_path, "r") as f:
+                embeddings = json.load(f)
+            if len(embeddings) != len(df):
                 continue
-            feat = {}
-            for ev in event_types:
-                ev_data = window[window["event_type"] == ev]
-                durations = ev_data["duration"].values
-                feat[f"count_{ev}"] = len(durations)
-                feat[f"duration_{ev}"] = durations.sum()
-                feat[f"rate_{ev}"] = len(durations) / window_size
-                feat[f"proportion_time_{ev}"] = durations.sum() / window_size
-                feat[f"mean_duration_{ev}"] = durations.mean() if len(durations) else 0
-                feat[f"std_duration_{ev}"] = durations.std() if len(durations) else 0
-            key = (
-                f"sub-{subject:02d}_run-{run:02d}",
-                round(start, 1),
-                round(end, 1),
-            )
-            pause_features[key] = np.array(list(feat.values()))
-    return pause_features
+            df["embedding"] = embeddings
+        else:
+            continue
+        all_data.append(df)
+    if not all_data:
+        raise ValueError("No valid transcript data was loaded.")
+    return pd.concat(all_data, ignore_index=True)
 
 
 def load_gaze_data(window_size=11, step_size=5):
@@ -90,8 +90,8 @@ def load_gaze_data(window_size=11, step_size=5):
             metadata.append(
                 {
                     "key": f"sub-{subject_id:02d}_run-{run_id:02d}",
-                    "win_start": round(start_t, 1),
-                    "win_end": round(end_t, 1),
+                    "win_start": int(start_t * 10),
+                    "win_end": int(end_t * 10),
                     "subject_id": subject_id,
                     "run_id": run_id,
                 }
@@ -100,46 +100,60 @@ def load_gaze_data(window_size=11, step_size=5):
 
 
 def main():
+    print("Loading transcript embeddings...")
+    participant_df = load_transcripts("data/raw/transcripts/participant")
+    participant_df["match_key"] = participant_df["file"].apply(extract_id)
+    matched_keys = set(participant_df["match_key"])
+
     print("Loading gaze data...")
     X_gaze_raw, meta_gaze = load_gaze_data()
+    gaze_lookup = {
+        (row["key"], row["win_start"], row["win_end"]): idx
+        for idx, row in meta_gaze.iterrows()
+    }
 
-    print("Loading pause features...")
-    pause_feature_dict = load_pause_features("data/raw/pause/prod_comp_gaps_pauses.csv")
+    print("Processing text windows...")
+    X_text, y_text, text_metadata = [], [], {}
+    for key in tqdm(matched_keys):
+        part = participant_df[participant_df["match_key"] == key]
+        max_time = part["end_sec"].max()
+        for win_start in np.arange(0, max_time - WINDOW_SIZE + 1, STEP_SIZE):
+            win_end = win_start + WINDOW_SIZE
+            buffer_start = max(0, win_start - BUFFER)
+            part_win = part[
+                (part["start_sec"] >= buffer_start) & (part["start_sec"] <= win_end)
+            ]
+            if part_win.empty:
+                continue
+            try:
+                part_emb = np.vstack(part_win["embedding"].values)
+                part_avg = np.mean(part_emb, axis=0)
+            except:
+                part_avg = np.zeros(EMBEDDING_DIM)
+            X_text.append(part_avg)
+            y_text.append(part_win["eng_level"].iloc[0])
+            win_key = (key, int(win_start * 10), int(win_end * 10))
+            text_metadata[win_key] = len(X_text) - 1
 
-    print("Combining gaze and pause features...")
+    print("Combining gaze and embeddings...")
     X_all, y_all, groups_all = [], [], []
     for i, row in meta_gaze.iterrows():
-        win_key = (
-            row["key"],
-            round(row["win_start"], 1),
-            round(row["win_end"], 1),
-        )
-        pause_feat = pause_feature_dict.get(win_key)
-        if pause_feat is None:
+        win_key = (row["key"], row["win_start"], row["win_end"])
+        text_idx = text_metadata.get(win_key)
+        if text_idx is None:
             continue
-
-        subject_id = row["subject_id"]
-        run_id = row["run_id"]
-        label_row = mapping_df[
-            (mapping_df["subject_id"] == subject_id) & (mapping_df["run"] == run_id)
-        ]
-        if label_row.empty:
-            continue
-        label = label_row["EngagementLevel"].values[0]
-
         gaze_win = X_gaze_raw[i]
-        fused = np.concatenate([gaze_win.flatten(), pause_feat])
-        X_all.append(fused)
-        y_all.append(label)
-        groups_all.append(subject_id)
+        text_feat = X_text[text_idx]
+        X_all.append(np.concatenate([gaze_win.flatten(), text_feat]))
+        y_all.append(y_text[text_idx])
+        groups_all.append(row["subject_id"])
 
-    print(f"Number of combined samples: {len(X_all)}")
     X_all = StandardScaler().fit_transform(np.stack(X_all))
     y_all = np.array(y_all)
     groups_all = np.array(groups_all)
 
     le = LabelEncoder()
-    y_enc = le.fit_transform(y_all)
+    y_encoded = le.fit_transform(y_all)
 
     pipeline = Pipeline(
         [
@@ -155,30 +169,27 @@ def main():
                     random_state=42,
                     n_jobs=4,
                 ),
-            )
+            ),
         ]
     )
 
     print("Running Leave-One-Group-Out CV...")
     logo = LeaveOneGroupOut()
     accs, all_y_true, all_y_pred = [], [], []
-
     for fold, (train_idx, test_idx) in enumerate(
-        logo.split(X_all, y_enc, groups_all), 1
+        logo.split(X_all, y_encoded, groups_all), 1
     ):
         X_train, X_test = X_all[train_idx], X_all[test_idx]
-        y_train, y_test = y_enc[train_idx], y_enc[test_idx]
-        pipeline.fit(
-            X_train,
-            y_train,
-            clf__sample_weight=compute_sample_weight("balanced", y_train),
-        )
+        y_train, y_test = y_encoded[train_idx], y_encoded[test_idx]
+        print("fit pipeline")
+        pipeline.fit(X_train, y_train)
+        print("predict pipeline")
         y_pred = pipeline.predict(X_test)
         acc = accuracy_score(y_test, y_pred)
         accs.append(acc)
         all_y_true.extend(y_test)
         all_y_pred.extend(y_pred)
-        print(f"Fold {fold} | Subject {groups_all[test_idx[0]]} | Accuracy: {acc:.4f}")
+        print(f"Fold {fold} | Subject {groups_all[test_idx[0]]} | Acc: {acc:.4f}")
 
     print("\n=== Final Results ===")
     print(f"Average Accuracy: {np.mean(accs):.4f}")

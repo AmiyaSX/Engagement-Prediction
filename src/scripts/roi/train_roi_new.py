@@ -306,7 +306,6 @@ for fold, (train_idx, test_idx) in enumerate(logo.split(X, y_encoded, groups)):
     assert len(feature_names) == X.shape[1], "Feature name count mismatch"
 
     # === Feature Importance ===
-
     importances = pipeline.named_steps["classifier"].feature_importances_
     feature_importance_df = pd.DataFrame(
         {"Feature": feature_names, "Importance": importances}
