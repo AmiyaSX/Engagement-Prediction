@@ -22,7 +22,7 @@ from google.api_core import retry
 WINDOW_SIZE = 12
 STEP_SIZE = 5
 EMBEDDING_DIM = 3072
-BUFFER = 600
+BUFFER = 30
 
 genai.configure(api_key="My key")
 
@@ -416,22 +416,74 @@ def load_transcript_embeddings(dir_path):
         all_data.append(df)
     return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
 
+# Combines pause features + both ROI versions (SWTA and v1) into pipeline A,
+# and Gemini embeddings (from participant and operator transcripts) into pipeline B.
+# Final prediction is based on early fusion of all features.
+
+# [ALL IMPORTS REMAIN UNCHANGED]
+
+# [...] KEEP ALL YOUR EXISTING FUNCTIONS
+
+
+# === MODIFIED TRANSCRIPT EMBEDDING LOADER FOR BOTH PARTICIPANT & OPERATOR ===
+def load_dual_embeddings(participant_dir, operator_dir):
+    def load_embeddings(dir_path, speaker_tag):
+        all_data = []
+        for file_path in glob.glob(f"{dir_path}/*.csv"):
+            filename = os.path.basename(file_path)
+            try:
+                subject_id = int(filename.split("_")[0].split("-")[1])
+                run_id = int(filename.split("_")[2].replace(".csv", "").split("-")[1])
+            except Exception:
+                continue
+            df = pd.read_csv(file_path)
+            if "transcription" not in df.columns:
+                continue
+
+            cache_path = f"data/raw/transcripts/embeddings/{filename.replace('.csv', '')}_embeddings.json"
+            if not os.path.exists(cache_path):
+                continue
+
+            with open(cache_path, "r") as f:
+                embeddings = json.load(f)
+            if len(embeddings) != len(df):
+                continue
+            label_row = mapping_df[
+                (mapping_df["subject_id"] == subject_id) & (mapping_df["run"] == run_id)
+            ]
+            if label_row.empty:
+                continue
+            label = label_row["EngagementLevel"].values[0]
+            df["embedding"] = embeddings
+            df["subject"] = subject_id
+            df["run"] = run_id
+            df["start"] = df["start_time"]
+            df["end"] = df["end_time"]
+            df["speaker"] = speaker_tag
+            df["eng_level"] = label
+            all_data.append(df)
+        return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
+
+    part_df = load_embeddings(participant_dir, "participant")
+    op_df = load_embeddings(operator_dir, "operator")
+    return pd.concat([part_df, op_df], ignore_index=True)
+
 
 def main():
     pause_df = build_pause_feature_table()
     roi_df = build_roi_feature_table()
-    text_df = load_transcript_embeddings("data/raw/transcripts/participant")
+    text_df = load_dual_embeddings(
+        "data/raw/transcripts/participant", "data/raw/transcripts/operator"
+    )
 
     if pause_df.empty or roi_df.empty or text_df.empty:
         raise RuntimeError("Missing data for fusion model")
 
-    # --- Merge A: ROI + Pauses ---
     mm = pd.merge(pause_df, roi_df, on=["subject", "run", "window_start"], how="inner")
     y_a = mm["label"].str.lower()
     groups = mm["subject"]
     X_a = mm.drop(columns=["label", "subject", "run", "window_start"])
 
-    # --- Build B: Embedding windows ---
     X_b, y_b, meta_b = [], [], []
     for (subj, run), group in text_df.groupby(["subject", "run"]):
         max_t = group["end"].max()
@@ -456,7 +508,6 @@ def main():
     df_b["key"] = list(zip(df_b["subject"], df_b["run"], df_b["window_start"]))
     df_b = df_b.set_index("key")
 
-    # --- Align matched keys ---
     mm["key"] = list(zip(mm["subject"], mm["run"], mm["window_start"]))
 
     X_a_final, X_b_final, y_final, groups_final = [], [], [], []
@@ -464,24 +515,13 @@ def main():
         key = row["key"]
         if key not in df_b.index:
             continue
-
-        matches = df_b.loc[[key]]
-        if matches.empty:
-            continue
-
-        x_b = matches.iloc[0]["X_b"]
-
+        x_b = df_b.loc[[key], "X_b"].values[0]
         X_a_final.append(X_a.loc[idx].values)
         X_b_final.append(x_b)
         y_final.append(row["label"])
         groups_final.append(row["subject"])
 
-    # --- Check result shape ---
     print(f"[INFO] Final samples: {len(X_a_final)}")
-
-    # Now X_a_final, X_b_final, y_final, groups_final are aligned
-
-    # Example (early fusion)
     X_a_final = np.stack(X_a_final)
     X_b_final = np.stack(X_b_final)
     X_final = np.stack(
@@ -491,7 +531,6 @@ def main():
     groups_final = np.array(groups_final)
 
     print(f"[INFO] Fused input shape: {len(X_final)}")
-    # === Prepare for training ===
     le = LabelEncoder()
     y_encoded = le.fit_transform(y_final)
 
@@ -523,21 +562,17 @@ def main():
     ):
         X_train, X_test = X_final[train_idx], X_final[test_idx]
         y_train, y_test = y_encoded[train_idx], y_encoded[test_idx]
-
         w = compute_sample_weight("balanced", y_train)
         pipeline.fit(X_train, y_train, classifier__sample_weight=w)
-
         y_pred = pipeline.predict(X_test)
         acc = accuracy_score(y_test, y_pred)
         accs.append(acc)
         all_y_true.extend(y_test)
         all_y_pred.extend(y_pred)
-
         print(
             f"Fold {fold:02d} | Subject(s): {np.unique(groups_final[test_idx])} | Acc: {acc:.4f}"
         )
 
-    # === Final evaluation
     print("\n=== Final Results ===")
     print(f"Average Accuracy: {np.mean(accs):.4f}  (± {np.std(accs):.4f})")
     print("Classification Report:")

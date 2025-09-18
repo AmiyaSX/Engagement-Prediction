@@ -1,0 +1,47 @@
+/opt/homebrew/anaconda3/envs/engagement_prediction/bin
+/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/src/scripts/combine/train_all_modalities.py"
+Pauses: windows: 100%|██████████████████████████████████████████████████████████████| 60/60 [00:11<00:00,  5.08it/s]
+ROI: swta: 100%|████████████████████████████████████████████████████████████████████| 19/19 [00:17<00:00,  1.09it/s]
+ROI: comp_prod: 100%|███████████████████████████████████████████████████████████████| 20/20 [00:17<00:00,  1.13it/s]
+[INFO] Final samples: 4875
+[INFO] Fused input shape: 4875
+=== Training & Evaluating (LOGO CV) ===
+Fold 01 | Subject(s): [5] | Acc: 0.5782
+Fold 02 | Subject(s): [7] | Acc: 0.7466
+Fold 03 | Subject(s): [8] | Acc: 0.7959
+Fold 04 | Subject(s): [11] | Acc: 0.5867
+Fold 05 | Subject(s): [12] | Acc: 0.8265
+Fold 06 | Subject(s): [13] | Acc: 0.7109
+Fold 07 | Subject(s): [15] | Acc: 0.9082
+Fold 08 | Subject(s): [18] | Acc: 0.7585
+Fold 09 | Subject(s): [19] | Acc: 0.5680
+Fold 10 | Subject(s): [20] | Acc: 0.9048
+Fold 11 | Subject(s): [21] | Acc: 0.6667
+Fold 12 | Subject(s): [22] | Acc: 0.7381
+Fold 13 | Subject(s): [23] | Acc: 0.7143
+Fold 14 | Subject(s): [27] | Acc: 0.8571
+Fold 15 | Subject(s): [28] | Acc: 0.5928
+Fold 16 | Subject(s): [29] | Acc: 0.7891
+Fold 17 | Subject(s): [30] | Acc: 0.7820
+Fold 18 | Subject(s): [31] | Acc: 0.6918
+Fold 19 | Subject(s): [32] | Acc: 0.5612
+
+=== Final Results ===
+Average Accuracy: 0.7251  (± 0.1081)
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.72      0.74      0.73      1648
+         low       0.76      0.78      0.77      1659
+      medium       0.69      0.66      0.67      1568
+
+    accuracy                           0.73      4875
+   macro avg       0.72      0.72      0.72      4875
+weighted avg       0.73      0.73      0.73      4875
+
+
+Confusion Matrix:
+               Pred high  Pred low  Pred medium
+Actual high         1223       165          260
+Actual low           176      1286          197
+Actual medium        305       234         1029

@@ -1,0 +1,39 @@
+ /opt/homebrew/anaconda3/envs/engagement_prediction/bin
+/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/src/scripts/combine/train_combine_roi_embeddings.
+py"
+Loading transcripts (participant and operator)...
+Loading brain data...
+100%|███████████████████████████████████████████████████████████████████████████████| 53/53 [00:19<00:00,  2.72it/s]
+[INFO] Final samples: 994
+Fold 1 | Acc: 0.6140
+Fold 2 | Acc: 0.6842
+Fold 3 | Acc: 0.7193
+Fold 4 | Acc: 0.4054
+Fold 5 | Acc: 0.6981
+Fold 6 | Acc: 0.7458
+Fold 7 | Acc: 0.7500
+Fold 8 | Acc: 0.5556
+Fold 9 | Acc: 0.6111
+Fold 10 | Acc: 0.9500
+Fold 11 | Acc: 0.5893
+Fold 12 | Acc: 0.7119
+Fold 13 | Acc: 0.7679
+Fold 14 | Acc: 0.8462
+Fold 15 | Acc: 0.5405
+Fold 16 | Acc: 0.7407
+Fold 17 | Acc: 0.5965
+Fold 18 | Acc: 0.6949
+Fold 19 | Acc: 0.6000
+Fold 20 | Acc: 0.7167
+=== Final Results ===
+Average Accuracy: 0.6769  (± 0.1154)
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.68      0.68      0.68       359
+         low       0.69      0.73      0.71       296
+      normal       0.66      0.62      0.64       339
+
+    accuracy                           0.68       994
+   macro avg       0.68      0.68      0.68       994
+weighted avg       0.68      0.68      0.68       994
