@@ -58,7 +58,14 @@ def load_pause_features(file_path, window_size=12, step_size=5):
     )
 
     pause_features = {}
-    event_types = ["pause_p", "pause_c", "gap_p2c", "gap_c2p"]
+    event_types = [
+        "production",
+        "comprehension",
+        "pause_p",
+        "pause_c",
+        "gap_p2c",
+        "gap_c2p",
+    ]
     grouped = pause_df.groupby(["subject", "run"])
 
     for (subject, run), group in grouped:

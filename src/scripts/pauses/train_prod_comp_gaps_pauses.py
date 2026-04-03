@@ -11,7 +11,7 @@ from tqdm import tqdm
 # === CONFIG ===
 data_path = "data/raw/pause/prod_comp_gaps_pauses.csv"
 WINDOW_SIZE = 12  # seconds
-STEP_SIZE = 5  # seconds
+STEP_SIZE = 6  # seconds
 EVENT_TYPES = [
     "production",
     "comprehension",
@@ -112,7 +112,7 @@ pipeline = Pipeline(
             "classifier",
             XGBClassifier(
                 n_estimators=200,
-                max_depth=5,
+                max_depth=3,
                 learning_rate=0.1,
                 objective="multi:softmax",
                 num_class=len(le.classes_),
@@ -148,5 +148,6 @@ for fold, (train_idx, test_idx) in enumerate(logo.split(X, y_encoded, groups), 1
 
 print("\n=== Final Results ===")
 print(f"Average Accuracy: {np.mean(accuracies):.4f}")
+print(f"Std Accuracy: {np.std(accuracies):.4f}")
 print("Classification Report:")
 print(classification_report(all_y_true, all_y_pred, target_names=le.classes_))

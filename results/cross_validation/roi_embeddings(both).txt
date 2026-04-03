@@ -1,0 +1,80 @@
+
+/opt/homebrew/anaconda3/envs/engagement_prediction/bin/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Prediction/src/scripts/combine/train_combine_roi_embeddings.py"
+Loading transcripts (participant and operator)...
+Loading brain data...
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 53/53 [00:19<00:00,  2.69it/s]
+[INFO] Final samples: 934
+Fold 1 | Acc: 0.6140
+Fold 2 | Acc: 0.7719
+Fold 3 | Acc: 0.7544
+Fold 4 | Acc: 0.5135
+Fold 5 | Acc: 0.7547
+Fold 6 | Acc: 0.6949
+Fold 7 | Acc: 0.7500
+Fold 8 | Acc: 0.6667
+Fold 9 | Acc: 0.7037
+Fold 10 | Acc: 0.9500
+Fold 11 | Acc: 0.6250
+Fold 12 | Acc: 0.7119
+Fold 13 | Acc: 0.7143
+Fold 14 | Acc: 0.8654
+Fold 15 | Acc: 0.5676
+Fold 16 | Acc: 0.6852
+Fold 17 | Acc: 0.5614
+Fold 18 | Acc: 0.7119
+Fold 19 | Acc: 0.7000
+=== Final Results ===
+Average Accuracy: 0.7009  (± 0.1000)
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.70      0.74      0.72       339
+         low       0.70      0.72      0.71       276
+      normal       0.69      0.63      0.66       319
+
+    accuracy                           0.70       934
+   macro avg       0.70      0.70      0.70       934
+weighted avg       0.70      0.70      0.70       934
+
+/opt/homebrew/anaconda3/envs/engagement_prediction/bin/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Predictio
+n/src/scripts/combine/train_combine_roi_embeddings.py"
+Loading transcripts (participant and operator) with cached embeddings...
+Loading ROI engineered features on the same 12s/STEP_SIZE grid...
+Building fused windows (ROI + participant emb + operator emb)...
+Fusing: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 53/53 [00:16<00:00,  3.31it/s]
+[INFO] Final samples: 5899
+[INFO] Feature dim: 6216 (ROI=72 + part=3072 + op=3072)
+
+=== Training & Evaluating (LOGO CV) ===
+Fold 01 | Subject(s): [5] | Acc: 0.5847
+Fold 02 | Subject(s): [7] | Acc: 0.7337
+Fold 03 | Subject(s): [8] | Acc: 0.7232
+Fold 04 | Subject(s): [11] | Acc: 0.5678
+Fold 05 | Subject(s): [12] | Acc: 0.8051
+Fold 06 | Subject(s): [13] | Acc: 0.7203
+Fold 07 | Subject(s): [15] | Acc: 0.8475
+Fold 08 | Subject(s): [18] | Acc: 0.7316
+Fold 09 | Subject(s): [19] | Acc: 0.6017
+Fold 10 | Subject(s): [20] | Acc: 0.9407
+Fold 11 | Subject(s): [21] | Acc: 0.7175
+Fold 12 | Subject(s): [22] | Acc: 0.7994
+Fold 13 | Subject(s): [23] | Acc: 0.7768
+Fold 14 | Subject(s): [27] | Acc: 0.8983
+Fold 15 | Subject(s): [28] | Acc: 0.6229
+Fold 16 | Subject(s): [29] | Acc: 0.7740
+Fold 17 | Subject(s): [30] | Acc: 0.7203
+Fold 18 | Subject(s): [31] | Acc: 0.7825
+Fold 19 | Subject(s): [32] | Acc: 0.8051
+
+=== Final Results ===
+Average Accuracy: 0.7449  (± 0.0976)
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.72      0.78      0.75      2005
+         low       0.80      0.76      0.78      2006
+      normal       0.70      0.67      0.68      1888
+
+    accuracy                           0.74      5899
+   macro avg       0.74      0.74      0.74      5899
+weighted avg       0.74      0.74      0.74      5899

@@ -1,0 +1,42 @@
+/opt/homebrew/anaconda3/envs/engagement_prediction/bin/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Predi
+ction/src/scripts/combine/train_combine_roi_embeddings(par).py"
+Loading participant transcripts with cached embeddings...
+Loading ROI engineered features on the same 12s/STEP_SIZE grid...
+Building fused windows (ROI + participant emb)...
+Fusing: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 53/53 [00:09<00:00,  5.82it/s]
+[INFO] Final samples: 5862
+[INFO] Feature dim: 3144 (ROI=72 + part=3072)
+
+=== Training & Evaluating (LOGO CV) ===
+Fold 01 | Subject(s): [5] | Acc: 0.3616
+Fold 02 | Subject(s): [7] | Acc: 0.7507
+Fold 03 | Subject(s): [8] | Acc: 0.5621
+Fold 04 | Subject(s): [11] | Acc: 0.2304
+Fold 05 | Subject(s): [12] | Acc: 0.6836
+Fold 06 | Subject(s): [13] | Acc: 0.5312
+Fold 07 | Subject(s): [15] | Acc: 0.6880
+Fold 08 | Subject(s): [18] | Acc: 0.3654
+Fold 09 | Subject(s): [19] | Acc: 0.2789
+Fold 10 | Subject(s): [20] | Acc: 0.8362
+Fold 11 | Subject(s): [21] | Acc: 0.4815
+Fold 12 | Subject(s): [22] | Acc: 0.6278
+Fold 13 | Subject(s): [23] | Acc: 0.6412
+Fold 14 | Subject(s): [27] | Acc: 0.7705
+Fold 15 | Subject(s): [28] | Acc: 0.3771
+Fold 16 | Subject(s): [29] | Acc: 0.5819
+Fold 17 | Subject(s): [30] | Acc: 0.7224
+Fold 18 | Subject(s): [31] | Acc: 0.5141
+Fold 19 | Subject(s): [32] | Acc: 0.4915
+
+=== Final Results ===
+Average Accuracy: 0.5524  (± 0.1682)
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.64      0.66      0.65      1993
+         low       0.53      0.49      0.50      1995
+      normal       0.48      0.50      0.49      1874
+
+    accuracy                           0.55      5862
+   macro avg       0.55      0.55      0.55      5862
+weighted avg       0.55      0.55      0.55      5862

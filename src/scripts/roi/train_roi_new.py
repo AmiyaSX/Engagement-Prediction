@@ -3,13 +3,10 @@ import numpy as np
 import glob
 import os
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import RidgeClassifierCV
-from sklearn.model_selection import LeaveOneGroupOut, GridSearchCV, train_test_split
+from sklearn.model_selection import LeaveOneGroupOut
 from xgboost import XGBClassifier
-from sktime.transformations.panel.rocket import MiniRocket
 import joblib
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-from sklearn.ensemble import RandomForestClassifier
 import pandas as pd
 from scipy.stats import skew, kurtosis, entropy
 from scipy.fftpack import fft
@@ -60,6 +57,7 @@ def extract_features_from_window(window):
     num_rois = window.shape[0]
 
     for roi_signal in window:
+        roi_signal = (roi_signal - roi_signal.mean()) / (roi_signal.std() + 1e-8)
         # Basic statistics
         mean_val = np.mean(roi_signal)
         std_val = np.std(roi_signal)
@@ -132,6 +130,38 @@ def extract_features_from_window(window):
             ]
         )
 
+    # --- CROSS-ROI FEATURES (add these) ---
+    # For each pair of ROIs, add: spectral coherence, max lagged xcorr (±2)
+    for i in range(num_rois):
+        for j in range(i + 1, num_rois):
+            x = window[i].astype(float)
+            y = window[j].astype(float)
+
+            # Simple magnitude-squared coherence summary (normalized cross-spectrum)
+            X = np.fft.rfft(x)
+            Y = np.fft.rfft(y)
+            Sxy = X * np.conj(Y)
+            Sxx = (X * np.conj(X)).real + 1e-8
+            Syy = (Y * np.conj(Y)).real + 1e-8
+            # Average coherence across frequencies
+            coherence = float(np.mean((np.abs(Sxy) ** 2) / (Sxx * Syy)))
+
+            # Max lagged cross-correlation over small lags (±2 samples)
+            max_xcorr = 0.0
+            if np.std(x) > 0 and np.std(y) > 0 and len(x) > 4:
+                for lag in (-2, -1, 0, 1, 2):
+                    if lag < 0:
+                        xs, ys = x[:lag], y[-lag:]
+                    elif lag > 0:
+                        xs, ys = x[lag:], y[:-lag]
+                    else:
+                        xs, ys = x, y
+                    if len(xs) > 1:
+                        r = float(np.corrcoef(xs, ys)[0, 1])
+                        if np.isfinite(r):
+                            max_xcorr = max(max_xcorr, r)
+
+            features.extend([coherence, max_xcorr])
     return features
 
 
@@ -156,8 +186,9 @@ def load_roi_data(window_size=10, step_size=4):
             print(f"No 'run_index' column in {filename}")
             continue
 
-        # Normalize ROI features per subject (enhanced more accuracy)
+        # Normalize ROI features per subject (enhanced more accuracy), has info leak problem
         roi_columns = new_roi_columns
+
         df[roi_columns] = (df[roi_columns] - df[roi_columns].mean()) / df[
             roi_columns
         ].std()
@@ -216,7 +247,7 @@ def load_roi_data(window_size=10, step_size=4):
 
 X, y, groups, metadata_df = load_roi_data()
 
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 le = LabelEncoder()
 # Encode string labels to integers
@@ -224,6 +255,7 @@ y_encoded = le.fit_transform(y)
 
 pipeline = Pipeline(
     steps=[
+        ("scaler", StandardScaler()),
         (
             "classifier",
             XGBClassifier(
@@ -254,12 +286,18 @@ all_y_true = []
 all_y_pred = []
 
 print("\nRunning Leave-One-Group-Out Cross-Validation:\n")
+from sklearn.utils.class_weight import compute_sample_weight
 
+# np.set_printoptions(threshold=np.inf)
 for fold, (train_idx, test_idx) in enumerate(logo.split(X, y_encoded, groups)):
     X_train, X_test = X[train_idx], X[test_idx]
     y_train, y_test = y_encoded[train_idx], y_encoded[test_idx]
 
-    pipeline.fit(X_train, y_train)
+    # print("y_train (encoded):", y_train)
+    # print("y_train (decoded):", le.inverse_transform(y_train))
+
+    w_train = compute_sample_weight("balanced", y_train)
+    pipeline.fit(X_train, y_train, classifier__sample_weight=w_train)
     y_pred = pipeline.predict(X_test)
 
     acc = accuracy_score(y_test, y_pred)
@@ -302,7 +340,18 @@ for fold, (train_idx, test_idx) in enumerate(logo.split(X, y_encoded, groups)):
         for stat in roi_stats:
             feature_names.append(f"{roi}_{stat}")
 
-    # Sanity check
+    # NEW: cross-ROI names (2 stats per pair)
+    pair_stats = ["coherence", "max_xcorr"]
+    pairs = [
+        (roi_labels[0], roi_labels[1]),
+        (roi_labels[0], roi_labels[2]),
+        (roi_labels[1], roi_labels[2]),
+    ]
+    for a, b in pairs:
+        for ps in pair_stats:
+            feature_names.append(f"{a}__{b}_{ps}")
+
+    # Sanity check: 66 (within) + 6 (cross) = 72 total
     assert len(feature_names) == X.shape[1], "Feature name count mismatch"
 
     # === Feature Importance ===
@@ -315,6 +364,17 @@ for fold, (train_idx, test_idx) in enumerate(logo.split(X, y_encoded, groups)):
     feature_importance_df.to_csv(
         f"roi_feature_importance_sub-{np.unique(groups[test_idx])}.csv", index=False
     )
+
+    ## Draw feature importance per round
+    # top_n = 10
+    # feature_importance_df.head(top_n).plot.barh(
+    #     x="Feature", y="Importance", figsize=(8, 4), legend=False
+    # )
+    # plt.gca().invert_yaxis()
+    # plt.title("Top 10 ROI Feature Importances")
+    # plt.xlabel("Importance Score")
+    # plt.tight_layout()
+    # plt.show()
 
 # Overall results
 print("\n=== LOGO CV Summary ===")

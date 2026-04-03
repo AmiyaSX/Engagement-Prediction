@@ -46,13 +46,25 @@ def extract_id(file_name):
     run = parts[2].split("-")[1].split(".")[0]  # 01
     return f"{subject}_run-{run}"
 
+
 def load_pause_features(file_path, window_size=12, step_size=5):
     pause_df = pd.read_csv(file_path)
-    pause_df["subject"] = pause_df["filename"].apply(lambda x: int(x.split("_")[0].split("-")[1]))
-    pause_df["run"] = pause_df["filename"].apply(lambda x: int(x.split("_")[1].split("-")[1]))
+    pause_df["subject"] = pause_df["filename"].apply(
+        lambda x: int(x.split("_")[0].split("-")[1])
+    )
+    pause_df["run"] = pause_df["filename"].apply(
+        lambda x: int(x.split("_")[1].split("-")[1])
+    )
 
     pause_features = {}
-    event_types = ["pause_p", "pause_c", "gap_p2c", "gap_c2p"]
+    event_types = [
+        "production",
+        "comprehension",
+        "pause_p",
+        "pause_c",
+        "gap_p2c",
+        "gap_c2p",
+    ]
     grouped = pause_df.groupby(["subject", "run"])
 
     for (subject, run), group in grouped:
@@ -128,7 +140,9 @@ def load_transcripts(dir_path):
             with open(cache_path, "r") as f:
                 embeddings = json.load(f)
             if len(embeddings) != len(df):
-                print(f"[WARNING] Embedding length mismatch in {filename} (expected {len(df)}, got {len(embeddings)})")
+                print(
+                    f"[WARNING] Embedding length mismatch in {filename} (expected {len(df)}, got {len(embeddings)})"
+                )
                 continue
             df["embedding"] = embeddings
         else:
@@ -143,6 +157,7 @@ def load_transcripts(dir_path):
         raise ValueError("No valid transcript data was loaded.")
 
     return pd.concat(all_data, ignore_index=True)
+
 
 def load_brain_data(window_size=11, step_size=5):
     X, y, groups = [], [], []
@@ -181,8 +196,10 @@ def load_brain_data(window_size=11, step_size=5):
                 )
     return np.stack(X), np.array(y), np.array(groups), pd.DataFrame(metadata)
 
+
 # Hybrid Late Fusion for Engagement Prediction
 # Model A: ROI + Pauses | Model B: Text Embeddings
+
 
 # === MAIN PROCESS ===
 def main():
@@ -201,7 +218,9 @@ def main():
         for win_start in np.arange(0, max_time - WINDOW_SIZE + 1, STEP_SIZE):
             win_end = win_start + WINDOW_SIZE
             buffer_start = max(0, win_start - BUFFER)
-            part_win = part[(part["start_sec"] >= buffer_start) & (part["start_sec"] <= win_end)]
+            part_win = part[
+                (part["start_sec"] >= buffer_start) & (part["start_sec"] <= win_end)
+            ]
 
             if part_win.empty:
                 continue
@@ -249,27 +268,63 @@ def main():
     le = LabelEncoder()
     y_encoded = le.fit_transform(y_combined)
 
-    pipeline_a = Pipeline([
-        ("classifier", XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
-                                     objective="multi:softprob", num_class=len(le.classes_),
-                                     eval_metric="mlogloss", random_state=42, n_jobs=4))])
+    pipeline_a = Pipeline(
+        [
+            (
+                "classifier",
+                XGBClassifier(
+                    n_estimators=200,
+                    max_depth=6,
+                    learning_rate=0.1,
+                    objective="multi:softprob",
+                    num_class=len(le.classes_),
+                    eval_metric="mlogloss",
+                    random_state=42,
+                    n_jobs=4,
+                ),
+            )
+        ]
+    )
 
-    pipeline_b = Pipeline([
-        ("classifier", XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
-                                     objective="multi:softprob", num_class=len(le.classes_),
-                                     eval_metric="mlogloss", random_state=42, n_jobs=4))])
+    pipeline_b = Pipeline(
+        [
+            (
+                "classifier",
+                XGBClassifier(
+                    n_estimators=200,
+                    max_depth=6,
+                    learning_rate=0.1,
+                    objective="multi:softprob",
+                    num_class=len(le.classes_),
+                    eval_metric="mlogloss",
+                    random_state=42,
+                    n_jobs=4,
+                ),
+            )
+        ]
+    )
 
     logo = LeaveOneGroupOut()
     accuracies = []
     all_y_true, all_y_pred = [], []
 
-    for fold, (train_idx, test_idx) in enumerate(logo.split(X_a, y_encoded, groups_combined), 1):
+    for fold, (train_idx, test_idx) in enumerate(
+        logo.split(X_a, y_encoded, groups_combined), 1
+    ):
         X_a_train, X_a_test = X_a[train_idx], X_a[test_idx]
         X_b_train, X_b_test = X_b[train_idx], X_b[test_idx]
         y_train, y_test = y_encoded[train_idx], y_encoded[test_idx]
 
-        pipeline_a.fit(X_a_train, y_train, classifier__sample_weight=compute_sample_weight("balanced", y_train))
-        pipeline_b.fit(X_b_train, y_train, classifier__sample_weight=compute_sample_weight("balanced", y_train))
+        pipeline_a.fit(
+            X_a_train,
+            y_train,
+            classifier__sample_weight=compute_sample_weight("balanced", y_train),
+        )
+        pipeline_b.fit(
+            X_b_train,
+            y_train,
+            classifier__sample_weight=compute_sample_weight("balanced", y_train),
+        )
 
         prob_a = pipeline_a.predict_proba(X_a_test)
         prob_b = pipeline_b.predict_proba(X_b_test)

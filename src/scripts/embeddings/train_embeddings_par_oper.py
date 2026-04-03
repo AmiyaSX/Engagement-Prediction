@@ -184,7 +184,7 @@ def main():
                     "classifier",
                     XGBClassifier(
                         n_estimators=200,
-                        max_depth=6,
+                        max_depth=3,
                         learning_rate=0.1,
                         objective="multi:softmax",
                         num_class=len(le.classes_),

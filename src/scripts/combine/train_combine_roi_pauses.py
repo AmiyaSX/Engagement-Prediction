@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
@@ -34,7 +34,7 @@ MAPPING_CSV = "data/mapping/conditions.csv"
 
 # Common window grid (seconds)
 WIN_SIZE_S = 12.0  # 12 s
-STEP_S = 5.0  # 5 s stride (used by pauses)
+STEP_S = 6.0  # 5 s stride (used by pauses)
 TR_S = 1.2  # fMRI TR
 ROI_WIN_TR = 10  # 10 TR = 12 s
 ROI_STEP_TR = 5  # 5 TR = 6 s
@@ -45,6 +45,22 @@ N_JOBS = 4
 # -----------------------------
 # HELPERS
 # -----------------------------
+EPS = 1e-9
+
+
+def to_window_idx(t, step=STEP_S):
+    """Map a time (seconds) to an integer window index (floor)."""
+    return int(np.floor((t + EPS) / step))
+
+
+def grid_start_from_idx(idx, step=STEP_S):
+    """Recover the canonical window start time from an index."""
+    return float(idx * step)
+
+
+def round_to_grid(t, step=STEP_S):
+    """Kept for compatibility where a float is needed; prefer indices for merges."""
+    return np.floor((t + EPS) / step) * step
 
 
 def make_window_grid(max_time, win=WIN_SIZE_S, step=STEP_S):
@@ -52,11 +68,6 @@ def make_window_grid(max_time, win=WIN_SIZE_S, step=STEP_S):
     if max_time < win:
         return []
     return np.arange(0.0, max_time - win + 1e-9, step)
-
-
-def round_to_grid(t, step=STEP_S):
-    """Snap a time value to the lower multiple of step (e.g., 17.3 -> 15 if step=5)."""
-    return np.floor((t + 1e-9) / step) * step
 
 
 # -----------------------------
@@ -147,17 +158,18 @@ def build_pause_feature_table():
             if win_df.empty:
                 continue
 
-            # label consistency within window
             labels = win_df["eng_level"].unique()
             if len(labels) != 1:
                 continue
             label = labels[0].lower()
 
             feats = extract_pause_features_window(win_df)
+            widx = to_window_idx(wstart, STEP_S)
             feats.update(
                 {
                     "subject": subj,
                     "run": run,
+                    "window_idx": widx,
                     "window_start": float(wstart),
                     "label": label,
                 }
@@ -181,7 +193,9 @@ def roi_window_features(window):
     returns list of features concatenated across ROIs
     """
     feats = []
+    num_rois = window.shape[0]
     for roi_signal in window:
+        roi_signal = (roi_signal - roi_signal.mean()) / (roi_signal.std() + 1e-8)
         roi_signal = np.asarray(roi_signal, dtype=float)
         # basic
         mean_val = roi_signal.mean()
@@ -265,21 +279,49 @@ def roi_window_features(window):
                 float(slope_changes),
             ]
         )
+    # --- CROSS-ROI FEATURES ---
+    # For each pair of ROIs, add: spectral coherence, max lagged xcorr (±2)
+    for i in range(num_rois):
+        for j in range(i + 1, num_rois):
+            x = window[i].astype(float)
+            y = window[j].astype(float)
+
+            # Simple magnitude-squared coherence summary (normalized cross-spectrum)
+            X = np.fft.rfft(x)
+            Y = np.fft.rfft(y)
+            Sxy = X * np.conj(Y)
+            Sxx = (X * np.conj(X)).real + 1e-8
+            Syy = (Y * np.conj(Y)).real + 1e-8
+            # Average coherence across frequencies
+            coherence = float(np.mean((np.abs(Sxy) ** 2) / (Sxx * Syy)))
+
+            # Max lagged cross-correlation over small lags (±2 samples)
+            max_xcorr = 0.0
+            if np.std(x) > 0 and np.std(y) > 0 and len(x) > 4:
+                for lag in (-2, -1, 0, 1, 2):
+                    if lag < 0:
+                        xs, ys = x[:lag], y[-lag:]
+                    elif lag > 0:
+                        xs, ys = x[lag:], y[:-lag]
+                    else:
+                        xs, ys = x, y
+                    if len(xs) > 1:
+                        r = float(np.corrcoef(xs, ys)[0, 1])
+                        if np.isfinite(r):
+                            max_xcorr = max(max_xcorr, r)
+
+            feats.extend([coherence, max_xcorr])
     return feats
 
 
-# Combines pause features + both ROI versions (SWTA and v1) on a common 12s/5s window grid and trains a multimodal classifier.
-
-# -----------------------------
+# Combines pause features + both ROI versions (SWTA) on a common 12s/5s window grid and trains a multimodal classifier.
 # 2) ROI FEATURES
-# -----------------------------
 
 
 def build_roi_feature_table():
     """
-    Build ROI feature table by merging features from two versions:
+    Build ROI feature table by merging features from ROI:
     - SWTA (ROI_GLOB)
-    - Contrast-based (ROI_GLOB_CONSTRAST)
     Merges per (subject, run, window_start) and prefixes v1 features.
     """
 
@@ -323,10 +365,12 @@ def build_roi_feature_table():
                     window = feats_mat[:, i : i + ROI_WIN_TR]
                     f = roi_window_features(window)
                     wstart_grid = float(round_to_grid(start_time, STEP_S))
+                    widx = to_window_idx(wstart_grid, STEP_S)
                     rows.append(
                         {
                             "subject": subject_id,
                             "run": run_id,
+                            "window_idx": widx,
                             "window_start": wstart_grid,
                             **{f"{prefix}_f_{k}": v for k, v in enumerate(f)},
                         }
@@ -334,28 +378,19 @@ def build_roi_feature_table():
         return pd.DataFrame(rows)
 
     roi_df_swta = load_roi_files(ROI_GLOB, ROI_COLS_SWTA, "swta")
-    roi_df_v1 = load_roi_files(ROI_GLOB_CONTRAST, ROI_COLS_CONTRAST, "comp_prod")
+    # roi_df_v1 = load_roi_files(ROI_GLOB_CONTRAST, ROI_COLS_CONTRAST, "comp_prod")
 
-    if roi_df_swta.empty or roi_df_v1.empty:
+    if roi_df_swta.empty:
         raise RuntimeError("One of the ROI versions is empty.")
 
-    merged = pd.merge(
-        roi_df_swta,
-        roi_df_v1,
-        on=["subject", "run", "window_start"],
-        how="inner",
-        validate="one_to_one",
-    )
-    return merged
-
-
-# -----------------------------
-# The rest of the code remains unchanged
-
-
-# -----------------------------
-# 3) MERGE + TRAIN
-# -----------------------------
+    # merged = pd.merge(
+    #     roi_df_swta,
+    #     # roi_df_v1,
+    #     on=["subject", "run", "window_start"],
+    #     how="inner",
+    #     validate="one_to_one",
+    # )
+    return roi_df_swta
 
 
 def main():
@@ -382,17 +417,18 @@ def main():
     mm = pd.merge(
         pause_df,
         roi_df,
-        on=["subject", "run", "window_start"],
+        on=["subject", "run", "window_idx", "window_start"],
         how="inner",
-        validate="many_to_one",  # multiple pause windows may merge to one ROI window-start; adjust if needed
+        validate="one_to_one",  # multiple pause windows may merge to one ROI window-start; adjust if needed
     )
 
     # Prepare X/y/groups
-    y = mm["label"].astype(str).str.lower()
+    y = mm["label"].astype(str).str.lower()                    
     groups = mm["subject"].astype(int)
 
-    # Drop non-features
-    drop_cols = ["label", "subject", "run", "window_start"]
+    # # Drop non-features
+    drop_cols = ["label", "subject", "run", "window_idx", "window_start"]
+    drop_cols = [c for c in drop_cols if c in pause_df.columns]
     X = mm.drop(columns=drop_cols)
 
     # Encode labels
@@ -402,7 +438,7 @@ def main():
     # Classifier
     clf = XGBClassifier(
         n_estimators=200,
-        max_depth=5,
+        max_depth=3,
         learning_rate=0.1,
         objective="multi:softmax",
         num_class=len(le.classes_),
@@ -410,7 +446,8 @@ def main():
         random_state=RANDOM_STATE,
         n_jobs=N_JOBS,
     )
-    pipeline = Pipeline([("classifier", clf)])
+
+    pipeline = Pipeline([("scaler", StandardScaler()), ("classifier", clf)])
 
     # LOGO CV
     logo = LeaveOneGroupOut()
@@ -445,9 +482,19 @@ def main():
         ).sort_values("Importance", ascending=False)
         os.makedirs("feature_importance", exist_ok=True)
         imp_df.to_csv(f"feature_importance/imp_fold_{fold:02d}.csv", index=False)
+        # top_n = 10
+        # imp_df.head(top_n).plot.barh(
+        #     x="Feature", y="Importance", figsize=(8, 4), legend=False
+        # )
+        # plt.gca().invert_yaxis()
+        # plt.title("Top 10 ROI + Pauses Feature Importances")
+        # plt.xlabel("Importance Score")
+        # plt.tight_layout()
+        # plt.show()
 
     print("\n=== Final Results ===")
     print(f"Average Accuracy: {np.mean(accuracies):.4f}  (± {np.std(accuracies):.4f})")
+    print(f"Std Accuracy: {np.std(accuracies):.4f}")
     print("Classification Report:")
     print(classification_report(all_true, all_pred, target_names=le.classes_))
 

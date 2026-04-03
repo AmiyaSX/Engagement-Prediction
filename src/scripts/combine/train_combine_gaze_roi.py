@@ -38,8 +38,8 @@ def extract_id(file_name):
 
 def load_brain_data(window_size=11, step_size=5):
     X, y, groups, metadata = [], [], [], []
-    roi_cols = ["comp_vs_prod_combined", "dmn_medial_tpj", "prod_vs_comp_combined"]
-    for file in glob.glob("data/raw/brain/train/*_with_timestamps.csv"):
+    roi_cols = ["swta_comp_roi", "swta_dmn_roi", "swta_prod_roi"]
+    for file in glob.glob("data/raw/brain/new/train/*_with_timestamps.csv"):
         df = pd.read_csv(file)
         filename = os.path.basename(file)
         subject_id = int(filename.split("_")[0].split("-")[1])
@@ -144,12 +144,12 @@ def main():
 
     pipeline = Pipeline(
         [
-            ("transform", MiniRocket(random_state=42)),
+            # ("transform", MiniRocket(random_state=42)),
             (
                 "clf",
                 XGBClassifier(
                     n_estimators=200,
-                    max_depth=6,
+                    max_depth=3,
                     learning_rate=0.1,
                     objective="multi:softmax",
                     num_class=len(le.classes_),

@@ -1,5 +1,5 @@
-# Combines ROI engineered features + embeddings from both participant and operator
-# on a common 12s/STEP_SIZE seconds grid for engagement prediction (LOGO CV).
+# Combines ROI engineered features + participant embeddings (par) for engagement prediction
+# on a common 12s/STEP_SIZE seconds grid (LOGO CV).
 
 import os
 import glob
@@ -23,7 +23,7 @@ from numpy.fft import fft
 
 # === CONFIGURATION ===
 WINDOW_SIZE = 12  # seconds
-STEP_SIZE = 6  # seconds (set to 6 if you want 12s/6s grid)
+STEP_SIZE = 5  # seconds (set to 6 if you want 12s/6s grid)
 EMBEDDING_DIM = 3072
 BUFFER = 30  # seconds (look-back for embeddings)
 TR_S = 1.2  # fMRI TR (seconds)
@@ -31,8 +31,15 @@ TR_S = 1.2  # fMRI TR (seconds)
 # Gemini (only used if you decide to generate embeddings; this script reads cached JSONs)
 genai.configure(api_key="My key")
 
-# Mapping
+# Paths
 MAPPING_CSV = "data/mapping/conditions.csv"
+ROI_GLOB = "data/raw/brain/new/train/*_with_timestamps.csv"
+ROI_COLS = ["swta_comp_roi", "swta_dmn_roi", "swta_prod_roi"]
+
+PART_DIR = "data/raw/transcripts/participant"
+EMB_CACHE_DIR = "data/raw/transcripts/embeddings"
+
+# Load mapping + label map (run-level)
 mapping_df = pd.read_csv(MAPPING_CSV)
 mapping_df.columns = mapping_df.columns.str.strip()
 mapping_df["EngagementLevel"] = (
@@ -42,7 +49,6 @@ mapping_df["EngagementLevel"] = (
     .map({"low": "low", "normal": "normal", "high": "high"})
 )
 
-# Fast run-level label lookup: (subject_id, run_id) -> label
 label_map = (
     mapping_df.assign(
         subject=mapping_df["subject_id"].astype(int),
@@ -53,13 +59,6 @@ label_map = (
     .str.lower()
     .to_dict()
 )
-
-ROI_GLOB = "data/raw/brain/new/train/*_with_timestamps.csv"
-ROI_COLS = ["swta_comp_roi", "swta_dmn_roi", "swta_prod_roi"]
-
-PART_DIR = "data/raw/transcripts/participant"
-OP_DIR = "data/raw/transcripts/operator"
-EMB_CACHE_DIR = "data/raw/transcripts/embeddings"
 
 
 # -------------------------
@@ -76,7 +75,7 @@ def get_embedding(text: str):
 
 
 # -------------------------
-# ROI FEATURE EXTRACTION (provided by you)
+# ROI FEATURE EXTRACTION (your function)
 # -------------------------
 def roi_window_features(window):
     """
@@ -208,20 +207,13 @@ def roi_window_features(window):
 # -------------------------
 def extract_key_from_filename(file_name: str) -> str:
     """
-    Original format assumed: sub-01_..._run-02.csv
+    Assumes: sub-01_..._run-02.csv
     Returns: "sub-01_run-02"
     """
     parts = file_name.split("_")
     subject = parts[0]  # sub-01
     run = parts[2].split("-")[1].split(".")[0]  # 02
     return f"{subject}_run-{run}"
-
-
-def parse_sub_run_from_key(key: str):
-    # key like "sub-01_run-02"
-    subject_id = int(key.split("_")[0].split("-")[1])
-    run_id = int(key.split("_")[1].split("-")[1])
-    return subject_id, run_id
 
 
 def make_window_grid(max_time: float, win: float, step: float):
@@ -241,14 +233,13 @@ def safe_mean_embedding(df_win: pd.DataFrame, dim: int):
 
 
 # -------------------------
-# TRANSCRIPTS (cached embeddings)
+# TRANSCRIPTS (participant only; cached embeddings)
 # -------------------------
-def load_transcripts_with_cached_embeddings(dir_path: str):
+def load_participant_with_cached_embeddings(dir_path: str):
     all_data = []
     for file_path in glob.glob(f"{dir_path}/*.csv"):
         filename = os.path.basename(file_path)
 
-        # parse ids
         try:
             subject_id = int(filename.split("_")[0].split("-")[1])
             run_id = int(filename.split("_")[2].replace(".csv", "").split("-")[1])
@@ -267,7 +258,7 @@ def load_transcripts_with_cached_embeddings(dir_path: str):
             EMB_CACHE_DIR, f"{filename.replace('.csv','')}_embeddings.json"
         )
         if not os.path.exists(cache_path):
-            # If you want to compute embeddings when missing, uncomment below:
+            # If you want to compute when missing, uncomment:
             # df["embedding"] = df["transcription"].fillna("").apply(get_embedding)
             # os.makedirs(os.path.dirname(cache_path), exist_ok=True)
             # with open(cache_path, "w") as f:
@@ -276,7 +267,6 @@ def load_transcripts_with_cached_embeddings(dir_path: str):
 
         with open(cache_path, "r") as f:
             emb = json.load(f)
-
         if len(emb) != len(df):
             continue
 
@@ -306,9 +296,7 @@ def load_brain_features_on_grid(
 ):
     """
     Builds engineered ROI features (roi_window_features) on the same seconds grid as embeddings.
-    Returns:
-      X_roi: (N, D_roi)
-      meta: DataFrame with columns key, win_start, win_end, subject_id, run_id, label
+    Returns a feature table with exact keys (key, win_start, win_end).
     """
     roi_win_tr = int(round(win_size_s / tr_s))  # 12/1.2=10 TR
     rows = []
@@ -328,7 +316,7 @@ def load_brain_features_on_grid(
         if not all(c in df.columns for c in roi_cols):
             continue
 
-        # z-score within file (same behavior as your other scripts)
+        # z-score within file (matches your other fusion scripts)
         df[list(roi_cols)] = (df[list(roi_cols)] - df[list(roi_cols)].mean()) / df[
             list(roi_cols)
         ].std()
@@ -352,11 +340,10 @@ def load_brain_features_on_grid(
                 continue
 
             max_time = float(ts.max())
-
             for win_start in make_window_grid(max_time, win=win_size_s, step=step_s):
                 win_end = win_start + win_size_s
 
-                # Find the first TR at/after win_start
+                # first TR at/after win_start
                 i = int(np.searchsorted(ts, win_start, side="left"))
                 if i + roi_win_tr > feats_mat.shape[1]:
                     continue
@@ -380,10 +367,11 @@ def load_brain_features_on_grid(
     if feat_df.empty:
         return feat_df
 
-    # Deduplicate robustly (mean aggregation)
+    # Deduplicate (mean agg)
     feat_df = feat_df.groupby(
         ["key", "win_start", "win_end", "subject_id", "run_id", "label"], as_index=False
     ).mean()
+
     return feat_df
 
 
@@ -391,33 +379,24 @@ def load_brain_features_on_grid(
 # MAIN
 # -------------------------
 def main():
-    print("Loading transcripts (participant and operator) with cached embeddings...")
-    participant_df = load_transcripts_with_cached_embeddings(PART_DIR)
-    operator_df = load_transcripts_with_cached_embeddings(OP_DIR)
-
-    if participant_df.empty or operator_df.empty:
+    print("Loading participant transcripts with cached embeddings...")
+    participant_df = load_participant_with_cached_embeddings(PART_DIR)
+    if participant_df.empty:
         raise RuntimeError(
-            "Transcript data missing (participant/operator). Check embedding cache JSONs exist."
+            "Participant transcript data missing. Check embedding cache JSONs exist."
         )
-
-    # Keep only keys present in both
-    matched_keys = set(participant_df["match_key"]).intersection(
-        set(operator_df["match_key"])
-    )
-    if not matched_keys:
-        raise RuntimeError("No overlapping keys between participant and operator.")
 
     print("Loading ROI engineered features on the same 12s/STEP_SIZE grid...")
     roi_feat_df = load_brain_features_on_grid()
     if roi_feat_df.empty:
         raise RuntimeError("No ROI features generated. Check ROI files/columns.")
 
-    # Build lookup: (key, win_start, win_end) -> roi feature vector + label + subject_id
     roi_cols_feat = [c for c in roi_feat_df.columns if c.startswith("roi_f_")]
+
+    # Lookup: (key, win_start, win_end) -> (roi_vec, label, subject_id)
     roi_index = {}
     for _, r in roi_feat_df.iterrows():
-        k = (r["key"], r["win_start"], r["win_end"])
-        roi_index[k] = (
+        roi_index[(r["key"], r["win_start"], r["win_end"])] = (
             r[roi_cols_feat].to_numpy(dtype=float),
             str(r["label"]).lower(),
             int(r["subject_id"]),
@@ -425,28 +404,18 @@ def main():
 
     X_combined, y_combined, groups_combined = [], [], []
 
-    print("Building fused windows (ROI + participant emb + operator emb)...")
-    for key in tqdm(sorted(matched_keys), desc="Fusing"):
-        part = participant_df[participant_df["match_key"] == key]
-        op = operator_df[operator_df["match_key"] == key]
-
-        # window grid based on available transcript times (safe upper bound)
-        max_time = float(max(part["end_sec"].max(), op["end_sec"].max()))
+    print("Building fused windows (ROI + participant emb)...")
+    for key, part in tqdm(participant_df.groupby("match_key"), desc="Fusing"):
+        max_time = float(part["end_sec"].max())
 
         for win_start in np.arange(0.0, max_time - WINDOW_SIZE + 1e-9, STEP_SIZE):
             win_end = win_start + WINDOW_SIZE
             buffer_start = max(0.0, win_start - BUFFER)
 
-            # Select utterances whose start is within [buffer_start, win_end]
             part_win = part[
                 (part["start_sec"] >= buffer_start) & (part["start_sec"] <= win_end)
             ]
-            op_win = op[
-                (op["start_sec"] >= buffer_start) & (op["start_sec"] <= win_end)
-            ]
-
             part_emb = safe_mean_embedding(part_win, EMBEDDING_DIM)
-            op_emb = safe_mean_embedding(op_win, EMBEDDING_DIM)
 
             roi_key = (key, round(float(win_start), 1), round(float(win_end), 1))
             roi_pack = roi_index.get(roi_key)
@@ -454,8 +423,8 @@ def main():
                 continue
 
             roi_vec, label, subject_id = roi_pack
+            combined_feat = np.concatenate([roi_vec, part_emb], axis=0)
 
-            combined_feat = np.concatenate([roi_vec, part_emb, op_emb], axis=0)
             X_combined.append(combined_feat)
             y_combined.append(label)
             groups_combined.append(subject_id)
@@ -471,7 +440,7 @@ def main():
 
     print(f"[INFO] Final samples: {len(X_combined)}")
     print(
-        f"[INFO] Feature dim: {X_combined.shape[1]} (ROI={len(roi_cols_feat)} + part={EMBEDDING_DIM} + op={EMBEDDING_DIM})"
+        f"[INFO] Feature dim: {X_combined.shape[1]} (ROI={len(roi_cols_feat)} + part={EMBEDDING_DIM})"
     )
 
     le = LabelEncoder()

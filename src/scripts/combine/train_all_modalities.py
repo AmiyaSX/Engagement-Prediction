@@ -1,4 +1,4 @@
-# Combines pause features + ROI features on a common 12s/5s window grid and trains a multimodal classifier.
+# Combines pause features + ROI features on a common 12s/6s window grid and trains a multimodal classifier.
 
 import os
 import glob
@@ -20,7 +20,7 @@ from google.api_core import retry
 
 # === CONFIGURATION ===
 WINDOW_SIZE = 12
-STEP_SIZE = 5
+STEP_SIZE = 6
 EMBEDDING_DIM = 3072
 BUFFER = 30
 
@@ -42,17 +42,17 @@ mapping_df["EngagementLevel"] = (
 PAUSE_PATH = "data/raw/pause/prod_comp_gaps_pauses.csv"
 # ROI time series (with 1.2s timestamps)
 ROI_GLOB = "data/raw/brain/new/train/*_with_timestamps.csv"  # SWTA version
-ROI_GLOB_CONTRAST = "data/raw/brain/train/*_with_timestamps.csv"  # CONTRAST version
+# ROI_GLOB_CONTRAST = "data/raw/brain/train/*_with_timestamps.csv"  # CONTRAST version
 # Fallback (contrast-based) columns if SWTA not present
 ROI_COLS_SWTA = ["swta_comp_roi", "swta_dmn_roi", "swta_prod_roi"]
-ROI_COLS_CONTRAST = ["comp_vs_prod_combined", "dmn_medial_tpj", "prod_vs_comp_combined"]
+# ROI_COLS_CONTRAST = ["comp_vs_prod_combined", "dmn_medial_tpj", "prod_vs_comp_combined"]
 
 # Mapping file (subject,run -> eng_level)
 MAPPING_CSV = "data/mapping/conditions.csv"
 
 # Common window grid (seconds)
 WIN_SIZE_S = 12.0  # 12 s
-STEP_S = 5.0  # 5 s stride (used by pauses)
+STEP_S = 6.0  # 6 s stride (used by pauses)
 TR_S = 1.2  # fMRI TR
 ROI_WIN_TR = 10  # 10 TR = 12 s
 ROI_STEP_TR = 5  # 5 TR = 6 s
@@ -63,6 +63,13 @@ N_JOBS = 4
 # -----------------------------
 # HELPERS
 # -----------------------------
+label_map = (
+    mapping_df.assign(
+        subject=mapping_df["subject_id"].astype(int), run=mapping_df["run"].astype(int)
+    )
+    .set_index(["subject", "run"])["EngagementLevel"]
+    .to_dict()
+)
 
 
 def make_window_grid(max_time, win=WIN_SIZE_S, step=STEP_S):
@@ -162,14 +169,18 @@ def build_pause_feature_table():
             win_df = group[
                 (group["start_time"] >= wstart) & (group["start_time"] < wend)
             ]
-            if win_df.empty:
-                continue
+            # if win_df.empty:
+            #     continue
 
             # label consistency within window
-            labels = win_df["eng_level"].unique()
-            if len(labels) != 1:
+            # labels = win_df["eng_level"].unique()
+            # if len(labels) != 1:
+            #     continue
+            # label = labels[0].lower()
+            label = label_map.get((subj, run), None)
+            if label is None:
                 continue
-            label = labels[0].lower()
+            label = str(label).lower()
 
             feats = extract_pause_features_window(win_df)
             feats.update(
@@ -199,6 +210,7 @@ def roi_window_features(window):
     returns list of features concatenated across ROIs
     """
     feats = []
+    num_rois = window.shape[0]
     for roi_signal in window:
         roi_signal = np.asarray(roi_signal, dtype=float)
         # basic
@@ -283,10 +295,42 @@ def roi_window_features(window):
                 float(slope_changes),
             ]
         )
+    # --- CROSS-ROI FEATURES ---
+    # For each pair of ROIs, add: spectral coherence, max lagged xcorr (±2)
+    for i in range(num_rois):
+        for j in range(i + 1, num_rois):
+            x = window[i].astype(float)
+            y = window[j].astype(float)
+
+            # Simple magnitude-squared coherence summary (normalized cross-spectrum)
+            X = np.fft.rfft(x)
+            Y = np.fft.rfft(y)
+            Sxy = X * np.conj(Y)
+            Sxx = (X * np.conj(X)).real + 1e-8
+            Syy = (Y * np.conj(Y)).real + 1e-8
+            # Average coherence across frequencies
+            coherence = float(np.mean((np.abs(Sxy) ** 2) / (Sxx * Syy)))
+
+            # Max lagged cross-correlation over small lags (±2 samples)
+            max_xcorr = 0.0
+            if np.std(x) > 0 and np.std(y) > 0 and len(x) > 4:
+                for lag in (-2, -1, 0, 1, 2):
+                    if lag < 0:
+                        xs, ys = x[:lag], y[-lag:]
+                    elif lag > 0:
+                        xs, ys = x[lag:], y[:-lag]
+                    else:
+                        xs, ys = x, y
+                    if len(xs) > 1:
+                        r = float(np.corrcoef(xs, ys)[0, 1])
+                        if np.isfinite(r):
+                            max_xcorr = max(max_xcorr, r)
+
+            feats.extend([coherence, max_xcorr])
     return feats
 
 
-# Combines pause features + both ROI versions (SWTA and v1) on a common 12s/5s window grid and trains a multimodal classifier.
+# Combines pause features + both ROI versions (SWTA and v1) on a common 12s/6s window grid and trains a multimodal classifier.
 
 # -----------------------------
 # 2) ROI FEATURES
@@ -301,70 +345,155 @@ def build_roi_feature_table():
     Merges per (subject, run, window_start) and prefixes v1 features.
     """
 
-    def load_roi_files(file_glob, expected_cols, prefix):
+    # def load_roi_files(file_glob, expected_cols, prefix):
+    #     rows = []
+    #     for file in tqdm(glob.glob(file_glob), desc=f"ROI: {prefix}"):
+    #         df = pd.read_csv(file)
+    #         df.columns = df.columns.str.strip()
+    #         fname = os.path.basename(file)
+
+    #         try:
+    #             subject_id = int(fname.split("_")[0].split("-")[1])
+    #         except Exception:
+    #             continue
+
+    #         if not all(c in df.columns for c in expected_cols):
+    #             continue
+
+    #         if "run_index" not in df.columns or "timestamp" not in df.columns:
+    #             continue
+
+    #         df[expected_cols] = (df[expected_cols] - df[expected_cols].mean()) / df[
+    #             expected_cols
+    #         ].std()
+
+    #         for run_id_str, g in df.groupby("run_index"):
+    #             try:
+    #                 run_id = int(run_id_str.strip().split("-")[1])
+    #             except Exception:
+    #                 continue
+
+    #             ts = g["timestamp"].to_numpy()
+    #             order = np.argsort(ts)
+    #             g = g.iloc[order]
+    #             ts = ts[order]
+    #             feats_mat = g[expected_cols].to_numpy().T
+
+    #             n_samples = feats_mat.shape[1]
+    #             for i in range(0, n_samples - ROI_WIN_TR + 1, ROI_STEP_TR):
+    #                 start_time = float(ts[i])
+    #                 window = feats_mat[:, i : i + ROI_WIN_TR]
+    #                 f = roi_window_features(window)
+    #                 wstart_grid = float(round_to_grid(start_time, STEP_S))
+    #                 rows.append(
+    #                     {
+    #                         "subject": subject_id,
+    #                         "run": run_id,
+    #                         "window_start": wstart_grid,
+    #                         **{f"{prefix}_f_{k}": v for k, v in enumerate(f)},
+    #                     }
+    #                 )
+    #     return pd.DataFrame(rows)
+
+    # roi_df_swta = load_roi_files(ROI_GLOB, ROI_COLS_SWTA, "swta")
+
+    # if roi_df_swta.empty:
+    #     raise RuntimeError("One of the ROI versions is empty.")
+
+    # return roi_df_swta
+
+    def load_roi_files(
+        file_glob,
+        expected_cols,
+        prefix,
+        win_size_s=WIN_SIZE_S,
+        step_s=STEP_S,
+        roi_win_tr=ROI_WIN_TR,
+    ):
+        """
+        Build ROI features on the SAME (win_size_s, step_s) seconds grid used by pauses/text.
+        Key change vs old version:
+        - Anchor windows by grid start time (wstart), not by ts[i] floored/rounded.
+        - Use searchsorted to find the first TR at/after wstart.
+        - Deduplicate (subject, run, window_start) safely.
+        """
         rows = []
         for file in tqdm(glob.glob(file_glob), desc=f"ROI: {prefix}"):
             df = pd.read_csv(file)
             df.columns = df.columns.str.strip()
             fname = os.path.basename(file)
 
+            # subject id from filename like sub-01_...
             try:
                 subject_id = int(fname.split("_")[0].split("-")[1])
             except Exception:
                 continue
 
+            # sanity checks
+            if ("run_index" not in df.columns) or ("timestamp" not in df.columns):
+                continue
             if not all(c in df.columns for c in expected_cols):
                 continue
 
-            if "run_index" not in df.columns or "timestamp" not in df.columns:
-                continue
-
+            # z-score within file (your original behavior)
             df[expected_cols] = (df[expected_cols] - df[expected_cols].mean()) / df[
                 expected_cols
             ].std()
 
             for run_id_str, g in df.groupby("run_index"):
+                # run id from run-01
                 try:
-                    run_id = int(run_id_str.strip().split("-")[1])
+                    run_id = int(str(run_id_str).strip().split("-")[1])
                 except Exception:
                     continue
 
-                ts = g["timestamp"].to_numpy()
-                order = np.argsort(ts)
-                g = g.iloc[order]
-                ts = ts[order]
-                feats_mat = g[expected_cols].to_numpy().T
+                g = g.sort_values("timestamp")
+                ts = g["timestamp"].to_numpy(dtype=float)
+                feats_mat = g[expected_cols].to_numpy(dtype=float).T  # (n_rois, T)
 
-                n_samples = feats_mat.shape[1]
-                for i in range(0, n_samples - ROI_WIN_TR + 1, ROI_STEP_TR):
-                    start_time = float(ts[i])
-                    window = feats_mat[:, i : i + ROI_WIN_TR]
+                if ts.size == 0:
+                    continue
+
+                max_time = float(ts.max())
+
+                # anchor windows to the common grid: 0, step_s, 2*step_s, ...
+                for wstart in make_window_grid(max_time, win=win_size_s, step=step_s):
+                    # first TR index at/after wstart
+                    i = int(np.searchsorted(ts, wstart, side="left"))
+                    if i + roi_win_tr > feats_mat.shape[1]:
+                        continue
+
+                    window = feats_mat[:, i : i + roi_win_tr]
                     f = roi_window_features(window)
-                    wstart_grid = float(round_to_grid(start_time, STEP_S))
+
                     rows.append(
                         {
                             "subject": subject_id,
                             "run": run_id,
-                            "window_start": wstart_grid,
+                            "window_start": float(
+                                wstart
+                            ),  # exact grid key (no rounding from ts)
                             **{f"{prefix}_f_{k}": v for k, v in enumerate(f)},
                         }
                     )
-        return pd.DataFrame(rows)
 
+        out = pd.DataFrame(rows)
+
+        # ensure one row per key (handles accidental duplicates robustly)
+        if not out.empty:
+            out = out.groupby(["subject", "run", "window_start"], as_index=False).mean()
+
+        return out
+
+
+    # usage
     roi_df_swta = load_roi_files(ROI_GLOB, ROI_COLS_SWTA, "swta")
-    roi_df_v1 = load_roi_files(ROI_GLOB_CONTRAST, ROI_COLS_CONTRAST, "comp_prod")
 
-    if roi_df_swta.empty or roi_df_v1.empty:
+    if roi_df_swta.empty:
         raise RuntimeError("One of the ROI versions is empty.")
 
-    merged = pd.merge(
-        roi_df_swta,
-        roi_df_v1,
-        on=["subject", "run", "window_start"],
-        how="inner",
-        validate="one_to_one",
-    )
-    return merged
+    return roi_df_swta
+
 
 # Combines pause features + both ROI versions (SWTA and v1) into pipeline A,
 # and Gemini embeddings (from transcripts) into pipeline B.
@@ -416,16 +545,10 @@ def load_transcript_embeddings(dir_path):
         all_data.append(df)
     return pd.concat(all_data, ignore_index=True) if all_data else pd.DataFrame()
 
+
 # Combines pause features + both ROI versions (SWTA and v1) into pipeline A,
 # and Gemini embeddings (from participant and operator transcripts) into pipeline B.
 # Final prediction is based on early fusion of all features.
-
-# [ALL IMPORTS REMAIN UNCHANGED]
-
-# [...] KEEP ALL YOUR EXISTING FUNCTIONS
-
-
-# === MODIFIED TRANSCRIPT EMBEDDING LOADER FOR BOTH PARTICIPANT & OPERATOR ===
 def load_dual_embeddings(participant_dir, operator_dir):
     def load_embeddings(dir_path, speaker_tag):
         all_data = []
@@ -492,12 +615,31 @@ def main():
             buffer_start = max(0, start - BUFFER)
             win = group[(group["start"] >= buffer_start) & (group["start"] < end)]
             if win.empty:
-                continue
+                emb = np.zeros(EMBEDDING_DIM * 2)
+                # continue
             try:
-                emb = np.mean(np.vstack(win["embedding"].values), axis=0)
+                # emb = np.mean(np.vstack(win["embedding"].values), axis=0)
+                part_win = win[win["speaker"] == "participant"]
+                op_win = win[win["speaker"] == "operator"]
+
+                part_emb = (
+                    np.mean(np.vstack(part_win["embedding"].values), axis=0)
+                    if not part_win.empty
+                    else np.zeros(EMBEDDING_DIM)
+                )
+                op_emb = (
+                    np.mean(np.vstack(op_win["embedding"].values), axis=0)
+                    if not op_win.empty
+                    else np.zeros(EMBEDDING_DIM)
+                )
+
+                emb = np.concatenate([part_emb, op_emb])
             except:
-                emb = np.zeros(EMBEDDING_DIM)
-            label = win["eng_level"].iloc[0].lower()
+                emb = np.zeros(EMBEDDING_DIM * 2)
+            # label = win["eng_level"].iloc[0].lower()
+            label = str(label_map.get((subj, run), "")).lower()
+            if not label:
+                continue
             X_b.append(emb)
             y_b.append(label)
             meta_b.append((subj, run, float(round_to_grid(start))))

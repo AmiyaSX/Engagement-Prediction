@@ -46,3 +46,51 @@ Confusion Matrix:
 Actual high         1115       202          318
 Actual low           238      1098          312
 Actual medium        331       329          895
+
+
+/opt/homebrew/anaconda3/envs/engagement_prediction/bin/python "/Volumes/Seagate Expansi/
+KTH/Thesis/Engagement-Prediction/src/scripts/combine/train_roi_embeddings_par_pauses.py"
+Pauses: windows: 100%|████████████████████████████████████████████████████████████████████████| 60/60 [00:12<00:00,  4.83it/s]
+ROI (SWTA): 100%|█████████████████████████████████████████████████████████████████████████████| 19/19 [00:18<00:00,  1.04it/s]
+[INFO] Final samples: 4838
+[INFO] Fused input shape: 4838
+=== Training & Evaluating (LOGO CV) ===
+Fold 01 | Subject(s): [5] | Acc: 0.4796
+Fold 02 | Subject(s): [7] | Acc: 0.7603
+Fold 03 | Subject(s): [8] | Acc: 0.7211
+Fold 04 | Subject(s): [11] | Acc: 0.4503
+Fold 05 | Subject(s): [12] | Acc: 0.7517
+Fold 06 | Subject(s): [13] | Acc: 0.6438
+Fold 07 | Subject(s): [15] | Acc: 0.7474
+Fold 08 | Subject(s): [18] | Acc: 0.4778
+Fold 09 | Subject(s): [19] | Acc: 0.4693
+Fold 10 | Subject(s): [20] | Acc: 0.8902
+Fold 11 | Subject(s): [21] | Acc: 0.6207
+Fold 12 | Subject(s): [22] | Acc: 0.6884
+Fold 13 | Subject(s): [23] | Acc: 0.6769
+Fold 14 | Subject(s): [27] | Acc: 0.7986
+Fold 15 | Subject(s): [28] | Acc: 0.5000
+Fold 16 | Subject(s): [29] | Acc: 0.7517
+Fold 17 | Subject(s): [30] | Acc: 0.7639
+Fold 18 | Subject(s): [31] | Acc: 0.5479
+Fold 19 | Subject(s): [32] | Acc: 0.4592
+
+=== Final Results ===
+Average Accuracy: 0.6420  (± 0.1343)
+Classification Report:
+              precision    recall  f1-score   support
+
+        high       0.66      0.68      0.67      1635
+         low       0.68      0.68      0.68      1648
+      medium       0.58      0.56      0.57      1555
+
+    accuracy                           0.64      4838
+   macro avg       0.64      0.64      0.64      4838
+weighted avg       0.64      0.64      0.64      4838
+
+
+Confusion Matrix:
+               Pred high  Pred low  Pred medium
+Actual high         1116       191          328
+Actual low           227      1123          298
+Actual medium        344       335          876

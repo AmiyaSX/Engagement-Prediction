@@ -1,0 +1,110 @@
+
+Fold 1 | Accuracy: 0.4473
+
+Fold 2 | Accuracy: 0.6418
+
+Fold 3 | Accuracy: 0.5641
+
+Fold 4 | Accuracy: 0.6140
+
+Fold 5 | Accuracy: 0.5869
+
+Fold 6 | Accuracy: 0.4613
+
+Fold 7 | Accuracy: 0.5259
+
+Fold 8 | Accuracy: 0.5171
+
+Fold 9 | Accuracy: 0.4006
+
+Fold 10 | Accuracy: 0.7143
+
+Fold 11 | Accuracy: 0.6628
+
+Fold 12 | Accuracy: 0.6418
+
+Fold 13 | Accuracy: 0.6182
+
+Fold 14 | Accuracy: 0.6619
+
+Fold 15 | Accuracy: 0.4052
+
+Fold 16 | Accuracy: 0.3134
+
+Fold 17 | Accuracy: 0.6580
+
+Fold 18 | Accuracy: 0.5960
+
+Fold 19 | Accuracy: 0.9060
+
+Fold 20 | Accuracy: 0.4580
+
+=== Final Results (Early Fusion: Pauses + Embeddings) ===
+Average Accuracy: 0.5697
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.60      0.65      0.62      2069
+           1       0.58      0.56      0.57      2083
+           2       0.48      0.45      0.46      1974
+
+    accuracy                           0.55      6126
+   macro avg       0.55      0.55      0.55      6126
+weighted avg       0.55      0.55      0.55      6126
+
+/opt/homebrew/anaconda3/envs/engagement_prediction/bin/python "/Volumes/Seagate Expansi/KTH/Thesis/Engagement-Predictio
+n/src/scripts/combine/train_combine_embeddings_pauses.py"
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 53/53 [00:09<00:00,  5.60it/s]
+
+Fold 1 | Accuracy: 0.5014
+
+Fold 2 | Accuracy: 0.6819
+
+Fold 3 | Accuracy: 0.6040
+
+Fold 4 | Accuracy: 0.6272
+
+Fold 5 | Accuracy: 0.6325
+
+Fold 6 | Accuracy: 0.5358
+
+Fold 7 | Accuracy: 0.5991
+
+Fold 8 | Accuracy: 0.5800
+
+Fold 9 | Accuracy: 0.4367
+
+Fold 10 | Accuracy: 0.7449
+
+Fold 11 | Accuracy: 0.6945
+
+Fold 12 | Accuracy: 0.6991
+
+Fold 13 | Accuracy: 0.6524
+
+Fold 14 | Accuracy: 0.6819
+
+Fold 15 | Accuracy: 0.4914
+
+Fold 16 | Accuracy: 0.4558
+
+Fold 17 | Accuracy: 0.6638
+
+Fold 18 | Accuracy: 0.6447
+
+Fold 19 | Accuracy: 0.8718
+
+Fold 20 | Accuracy: 0.4754
+
+=== Final Results (Early Fusion: Pauses + Embeddings) ===
+Average Accuracy: 0.6137
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.62      0.68      0.65      2069
+           1       0.65      0.62      0.64      2083
+           2       0.53      0.50      0.51      1974
+
+    accuracy                           0.60      6126
+   macro avg       0.60      0.60      0.60      6126
+weighted avg       0.60      0.60      0.60      6126
